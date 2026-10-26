@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="김규림의 개인 홈페이지입니다. 소개, 관심사, 주요 활동과 프로젝트를 확인할 수 있습니다.">
+  <meta name="theme-color" content="#211d3a">
+  <title>김규림 | 작은 경험 속 의미를 찾다</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #242238;
+      --muted: #68667a;
+      --purple: #5144a1;
+      --purple-dark: #292345;
+      --lavender: #f0edff;
+      --paper: #ffffff;
+      --background: #f7f6fb;
+      --line: #e7e3f1;
+      --accent: #f4c96b;
+      --radius: 22px;
+      --shadow: 0 14px 40px rgba(42, 32, 83, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 90px; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans KR", "Malgun Gothic", sans-serif;
+      color: var(--ink);
+      background: var(--background);
+      line-height: 1.7;
+      overflow-wrap: break-word;
+    }
+    a { color: inherit; }
+    a:focus-visible, button:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 4px;
+    }
+    .container { width: min(1100px, calc(100% - 48px)); margin-inline: auto; }
+
+    /* Hero / header */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 78px 0 72px;
+      color: white;
+      background:
+        radial-gradient(ellipse at 85% 15%, rgba(157, 139, 255, .32), transparent 32%),
+        radial-gradient(ellipse at 8% 100%, rgba(244, 201, 107, .13), transparent 32%),
+        linear-gradient(135deg, #211d3a 0%, #33295e 55%, #5144a1 100%);
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 270px;
+      height: 270px;
+      right: -80px;
+      bottom: -150px;
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 50%;
+      box-shadow: 0 0 0 30px rgba(255,255,255,.035), 0 0 0 60px rgba(255,255,255,.025);
+      pointer-events: none;
+    }
+    .hero-inner { position: relative; z-index: 1; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin: 0 0 20px;
+      color: #e1dcff;
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before {
+      content: "";
+      width: 25px;
+      height: 2px;
+      background: var(--accent);
+    }
+    h1 {
+      margin: 0;
+      max-width: 800px;
+      font-size: clamp(2.8rem, 7vw, 5.7rem);
+      line-height: 1.08;
+      letter-spacing: -.065em;
+    }
+    .hero-description {
+      max-width: 650px;
+      margin: 25px 0 0;
+      color: #e8e5f7;
+      font-size: clamp(1.02rem, 2vw, 1.22rem);
+      line-height: 1.9;
+      word-break: keep-all;
+    }
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 32px;
+    }
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 14px;
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      color: #fff;
+      font-size: .9rem;
+      text-decoration: none;
+    }
+    .hero-pill:hover { background: rgba(255,255,255,.16); }
+    .hero-pill svg { width: 17px; height: 17px; flex: 0 0 auto; }
+
+    /* Navigation */
+    .site-nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid rgba(231,227,241,.9);
+      background: rgba(255,255,255,.93);
+      backdrop-filter: blur(16px);
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 70px;
+      gap: 24px;
+    }
+    .brand {
+      flex: 0 0 auto;
+      font-weight: 900;
+      letter-spacing: -.04em;
+      text-decoration: none;
+    }
+    .brand span { color: var(--purple); }
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .nav-links a {
+      display: block;
+      padding: 9px 13px;
+      border-radius: 999px;
+      color: #555269;
+      font-size: .91rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background .2s ease, color .2s ease;
+    }
+    .nav-links a:hover, .nav-links a:focus-visible {
+      color: var(--purple);
+      background: var(--lavender);
+    }
+
+    /* Main layout and sections */
+    main { padding: 54px 0 72px; }
+    .section {
+      margin-bottom: 26px;
+      padding: clamp(24px, 4vw, 42px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--paper);
+      box-shadow: var(--shadow);
+      scroll-margin-top: 96px;
+    }
+    .section-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: 17px;
+      margin-bottom: 25px;
+    }
+    .section-number {
+      display: grid;
+      place-items: center;
+      width: 43px;
+      height: 43px;
+      flex: 0 0 43px;
+      border-radius: 14px;
+      background: var(--lavender);
+      color: var(--purple);
+      font-size: .82rem;
+      font-weight: 900;
+    }
+    h2 {
+      margin: 0;
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      letter-spacing: -.045em;
+      line-height: 1.3;
+    }
+    .section-kicker {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: .92rem;
+    }
+    .about-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(230px, .8fr);
+      gap: 28px;
+      align-items: stretch;
+    }
+    .about-copy {
+      margin: 0;
+      font-size: 1.08rem;
+      line-height: 1.95;
+      word-break: keep-all;
+    }
+    .about-note {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 24px;
+      border-radius: 18px;
+      background: linear-gradient(145deg, #f4f1ff, #fbfaff);
+    }
+    .about-note .note-mark {
+      margin-bottom: 10px;
+      color: var(--purple);
+      font-size: 1.6rem;
+      font-weight: 900;
+    }
+    .about-note p { margin: 0; color: #514d69; font-weight: 650; }
+
+    /* Interest cards */
+    .interest-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .interest-card {
+      min-height: 160px;
+      padding: 23px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fcfbff;
+    }
+    .interest-icon {
+      display: grid;
+      place-items: center;
+      width: 45px;
+      height: 45px;
+      margin-bottom: 15px;
+      border-radius: 14px;
+      background: #eeeaff;
+      color: var(--purple);
+      font-size: 1.3rem;
+    }
+    .interest-card h3 { margin: 0 0 6px; font-size: 1.04rem; }
+    .interest-card p { margin: 0; color: var(--muted); font-size: .92rem; }
+
+    /* Activities */
+    .activity-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .activity-list li {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 11px 15px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      font-weight: 700;
+    }
+    .activity-list li span { color: var(--purple); }
+
+    /* Projects */
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+    .project-card {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      min-height: 235px;
+      padding: 25px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(155deg, #fff 45%, #f8f6ff);
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .project-card:hover {
+      transform: translateY(-3px);
+      border-color: #c8c0f0;
+      box-shadow: 0 16px 35px rgba(42,32,83,.09);
+    }
+    .project-tag {
+      display: inline-block;
+      margin-bottom: 18px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: var(--lavender);
+      color: var(--purple);
+      font-size: .76rem;
+      font-weight: 850;
+    }
+    .project-card h3 { margin: 0 0 9px; font-size: 1.22rem; letter-spacing: -.025em; }
+    .project-card p { margin: 0 0 24px; color: var(--muted); font-size: .95rem; }
+    .project-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: auto;
+      color: var(--purple);
+      font-weight: 850;
+      text-decoration: none;
+    }
+    .project-link:hover { text-decoration: underline; }
+    .project-link svg { width: 17px; height: 17px; }
+
+    /* Footer */
+    footer {
+      padding: 35px 0;
+      color: #e9e6f7;
+      background: #211d3a;
+    }
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .footer-title { margin: 0; color: white; font-weight: 850; }
+    .footer-copy { margin: 5px 0 0; color: #bdb8d8; font-size: .87rem; }
+    .footer-email { color: white; text-decoration-color: #9d94cf; text-underline-offset: 4px; }
+
+    @media (max-width: 760px) {
+      .container { width: min(100% - 32px, 650px); }
+      .hero { padding: 58px 0 52px; }
+      .nav-inner { align-items: flex-start; flex-direction: column; gap: 8px; padding: 13px 0; }
+      .nav-links { justify-content: flex-start; width: 100%; gap: 3px; }
+      .nav-links a { padding: 7px 10px; font-size: .87rem; }
+      main { padding: 28px 0 44px; }
+      .about-grid { grid-template-columns: 1fr; }
+      .interest-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .section { margin-bottom: 18px; }
+      .footer-inner { align-items: flex-start; flex-direction: column; }
+    }
+    @media (max-width: 480px) {
+      .container { width: calc(100% - 24px); }
+      .hero { padding: 47px 0 42px; }
+      h1 { font-size: clamp(2.55rem, 13vw, 3.7rem); }
+      .hero-description { margin-top: 18px; font-size: 1rem; }
+      .hero-meta { gap: 8px; margin-top: 24px; }
+      .hero-pill { padding: 8px 11px; font-size: .82rem; }
+      .nav-inner { gap: 6px; }
+      .nav-links { display: grid; grid-template-columns: repeat(4, max-content); gap: 2px; }
+      .nav-links a { padding: 6px 8px; font-size: .8rem; }
+      .section { padding: 22px 18px; border-radius: 17px; }
+      .section-heading { gap: 12px; margin-bottom: 20px; }
+      .section-number { width: 37px; height: 37px; flex-basis: 37px; border-radius: 12px; }
+      .interest-grid, .project-grid { grid-template-columns: 1fr; }
+      .interest-card { min-height: 0; padding: 19px; }
+      .project-card { min-height: 205px; padding: 21px; }
+      .activity-list { gap: 8px; }
+      .activity-list li { padding: 9px 11px; font-size: .9rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero" id="home">
+    <div class="container hero-inner">
+      <p class="eyebrow">PERSONAL WEBSITE</p>
+      <h1>안녕하세요,<br>김규림입니다.</h1>
+      <p class="hero-description">안녕하십니까. 작은 경험 속에서도 의미를 찾아가는 김규림입니다.</p>
+      <div class="hero-meta">
+        <a class="hero-pill" href="mailto:kkkim1130@naver.com">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg>
+          이메일로 연락하기
+        </a>
+        <a class="hero-pill" href="#projects">
+          프로젝트 살펴보기
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <nav class="site-nav" aria-label="주요 메뉴">
+    <div class="container nav-inner">
+      <a class="brand" href="#home">김규림<span>.</span></a>
+      <ul class="nav-links">
+        <li><a href="#about">소개</a></li>
+        <li><a href="#interests">관심사</a></li>
+        <li><a href="#activities">주요 활동</a></li>
+        <li><a href="#projects">프로젝트</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="container">
+    <section class="section" id="about" aria-labelledby="about-title">
+      <div class="section-heading">
+        <span class="section-number" aria-hidden="true">01</span>
+        <div>
+          <h2 id="about-title">About Me</h2>
+          <p class="section-kicker">저를 소개합니다</p>
+        </div>
+      </div>
+      <div class="about-grid">
+        <p class="about-copy">안녕하십니까. 작은 경험 속에서도 의미를 찾아가는 김규림입니다. 일상에서 마주하는 다양한 순간과 경험을 저만의 방식으로 즐기고, 그 안에서 작은 의미를 발견하려고 합니다.</p>
+        <aside class="about-note" aria-label="나를 표현하는 문장">
+          <span class="note-mark" aria-hidden="true">“ ”</span>
+          <p>작은 경험도 모이면 나만의 이야기가 됩니다.</p>
+        </aside>
+      </div>
+      <p style="margin:24px 0 0;color:var(--muted);">이메일 <a href="mailto:kkkim1130@naver.com" style="color:var(--purple);font-weight:750;">kkkim1130@naver.com</a></p>
+    </section>
+
+    <section class="section" id="interests" aria-labelledby="interests-title">
+      <div class="section-heading">
+        <span class="section-number" aria-hidden="true">02</span>
+        <div>
+          <h2 id="interests-title">My Interests</h2>
+          <p class="section-kicker">요즘 관심을 두고 있는 것</p>
+        </div>
+      </div>
+      <div class="interest-grid">
+        <article class="interest-card">
+          <div class="interest-icon" aria-hidden="true">🍽️</div>
+          <h3>SEXY FOOD</h3>
+          <p>나의 관심사, 맛있는 음식과 음식 이야기</p>
+        </article>
+        <article class="interest-card">
+          <div class="interest-icon" aria-hidden="true">🎧</div>
+          <h3>음악 감상</h3>
+          <p>편하게 누워서 즐기는 음악 한 곡</p>
+        </article>
+        <article class="interest-card">
+          <div class="interest-icon" aria-hidden="true">📺</div>
+          <h3>콘텐츠 감상</h3>
+          <p>유튜브와 OTT에서 만나는 다양한 콘텐츠</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="activities" aria-labelledby="activities-title">
+      <div class="section-heading">
+        <span class="section-number" aria-hidden="true">03</span>
+        <div>
+          <h2 id="activities-title">Daily Activities</h2>
+          <p class="section-kicker">일상에서 즐기는 것들</p>
+        </div>
+      </div>
+      <ul class="activity-list">
+        <li><span aria-hidden="true">♫</span> 누워서 음악 듣기</li>
+        <li><span aria-hidden="true">◎</span> 인스타그램</li>
+        <li><span aria-hidden="true">▶</span> 유튜브</li>
+        <li><span aria-hidden="true">▤</span> 웹툰</li>
+        <li><span aria-hidden="true">▣</span> OTT 감상</li>
+      </ul>
+    </section>
+
+    <section class="section" id="projects" aria-labelledby="projects-title">
+      <div class="section-heading">
+        <span class="section-number" aria-hidden="true">04</span>
+        <div>
+          <h2 id="projects-title">My Projects</h2>
+          <p class="section-kicker">직접 만든 작업과 결과물</p>
+        </div>
+      </div>
+      <div class="project-grid">
+        <article class="project-card" id="project-todo">
+          <span class="project-tag">PROJECT 01</span>
+          <h3>오늘의 할 일 관리</h3>
+          <p>하루에 해야 할 일을 한눈에 정리하고 관리하기 위한 프로젝트입니다.</p>
+          <!-- 실제 결과물 주소가 준비되면 href="#"를 해당 주소로 바꿔 주세요. -->
+          <a class="project-link" href="#" aria-label="오늘의 할 일 관리 프로젝트 결과물 보기">
+            결과물 보기
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg>
+          </a>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-info">
+    <div class="container footer-inner">
+      <div>
+        <p class="footer-title">김규림의 개인 홈페이지</p>
+        <p class="footer-copy">작은 경험 속에서도 의미를 찾아가는 중입니다.</p>
+      </div>
+      <a class="footer-email" href="mailto:kkkim1130@naver.com">kkkim1130@naver.com</a>
+    </div>
+  </footer>
+</body>
+</html>
