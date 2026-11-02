@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KDC 한국십진분류표 주류 암기 게임</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Noto Sans KR & Gmarket Sans equivalent (Outfit & Noto Sans KR) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800;900&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f2d4a 100%);
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .font-num {
+            font-family: 'Outfit', 'Noto Sans KR', sans-serif;
+        }
+
+        /* 3D Card Flip Styling */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        .card-inner.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+        }
+
+        /* Card Back (KDC Book pattern) */
+        .card-back {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            border: 2px solid #60a5fa;
+            color: white;
+        }
+
+        /* Card Front (KDC Class Data) */
+        .card-front {
+            background-color: #ffffff;
+            border: 3px solid #cbd5e1;
+            transform: rotateY(180deg);
+        }
+
+        /* Matched Animation */
+        @keyframes matchedPulse {
+            0%, 100% { transform: rotateY(180deg) scale(1); }
+            50% { transform: rotateY(180deg) scale(1.08); }
+        }
+        .matched .card-front {
+            animation: matchedPulse 0.4s ease-in-out;
+            border-color: #10b981 !important;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+        }
+
+        /* Shake Animation */
+        @keyframes shake {
+            0%, 100% { transform: rotateY(180deg) translateX(0); }
+            20%, 60% { transform: rotateY(180deg) translateX(-6px); }
+            40%, 80% { transform: rotateY(180deg) translateX(6px); }
+        }
+        .mismatch .card-front {
+            animation: shake 0.4s ease-in-out;
+            border-color: #ef4444 !important;
+            background-color: #fef2f2 !important;
+        }
+
+        /* Combo Popup Animation */
+        @keyframes comboPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+        .combo-animation {
+            animation: comboPop 0.8s ease-out forwards;
+        }
+
+        /* Modal bounce animation */
+        @keyframes popIn {
+            0% { transform: scale(0.85); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop-in {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between items-center p-3 sm:p-5 text-slate-100">
+
+    <!-- Header Section -->
+    <header class="w-full max-w-2xl flex flex-col sm:flex-row items-center justify-between my-1 sm:my-2 gap-2">
+        <div class="text-center sm:text-left">
+            <div class="flex items-center justify-center sm:justify-start gap-2">
+                <span class="text-3xl">📚</span>
+                <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-amber-400 tracking-tight">
+                    KDC 십진분류표 주류 암기 게임
+                </h1>
+            </div>
+            <p class="text-slate-300 text-xs sm:text-sm mt-0.5">분류 기호(000~900)와 알맞은 분류 명칭을 짝지어 보세요!</p>
+        </div>
+
+        <!-- Top Right Action Buttons -->
+        <div class="flex items-center gap-2">
+            <button onclick="openGuideModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-1.5 px-3 rounded-xl shadow-md border border-indigo-400 transition-all active:scale-95 text-xs sm:text-sm flex items-center gap-1">
+                💡 KDC 학습표
+            </button>
+            <button id="soundToggleBtn" onclick="toggleSound()" class="bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold py-1.5 px-3 rounded-xl shadow-md border border-slate-600 transition-all active:scale-95 text-xs sm:text-sm flex items-center gap-1">
+                <span id="soundIcon">🔊</span> <span id="soundText">소리 ON</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Game Board Container -->
+    <main class="w-full max-w-2xl bg-slate-900/80 backdrop-blur-md rounded-3xl p-3 sm:p-5 shadow-2xl border border-slate-700 flex flex-col items-center gap-3 relative overflow-hidden">
+        
+        <!-- Combo Floating Text Anchor -->
+        <div id="comboContainer" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30"></div>
+
+        <!-- Score Dashboard -->
+        <div class="w-full grid grid-cols-4 gap-2 text-center">
+            <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-2">
+                <span class="text-slate-400 text-xs block">⏱️ 시간</span>
+                <span id="timerText" class="text-base sm:text-xl font-black text-cyan-400 font-num">00:00</span>
+            </div>
+            <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-2">
+                <span class="text-slate-400 text-xs block">⭐ 점수</span>
+                <span id="scoreText" class="text-base sm:text-xl font-black text-amber-400 font-num">0</span>
+            </div>
+            <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-2">
+                <span class="text-slate-400 text-xs block">🎯 시도</span>
+                <span id="movesText" class="text-base sm:text-xl font-black text-purple-400 font-num">0</span>
+            </div>
+            <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-2">
+                <span class="text-slate-400 text-xs block">👑 최고점수</span>
+                <span id="bestScoreText" class="text-base sm:text-xl font-black text-emerald-400 font-num">0</span>
+            </div>
+        </div>
+
+        <!-- Utility Bar -->
+        <div class="w-full flex items-center justify-between border-t border-b border-slate-800 py-1.5 px-1">
+            <div class="text-xs sm:text-sm text-slate-300 flex items-center gap-2">
+                <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                <span>총 20장 카드 (10쌍)</span>
+            </div>
+            <button onclick="restartGame()" class="bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-extrabold py-1.5 px-4 rounded-xl shadow-lg transition-all text-xs sm:text-sm flex items-center gap-1">
+                🔄 다시 시작
+            </button>
+        </div>
+
+        <!-- 20-Card Responsive Grid (5x4 on Desktop/Tablet, 4x5 on Mobile) -->
+        <div id="gameBoard" class="w-full grid grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-2.5 my-1 min-h-[380px] sm:min-h-[440px]">
+            <!-- Dynamic Cards Here -->
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-2 text-center text-slate-400 text-xs font-medium">
+        📖 KDC(한국십진분류표) 제6판 주류(Main Classes) 학습 교구 | 총류, 철학, 종교, 사회과학, 자연과학, 기술과학, 예술, 언어, 문학, 역사
+    </footer>
+
+    <!-- KDC Guide Modal -->
+    <div id="guideModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5 sm:p-6 max-w-lg w-full text-slate-100 shadow-2xl animate-pop-in">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-xl font-extrabold text-amber-400 flex items-center gap-2">
+                    <span>📖</span> KDC 한국십진분류표 주류(000~900)
+                </h3>
+                <button onclick="closeGuideModal()" class="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-300 mb-4">도서관의 책들을 주제별로 10가지 큰 범주(주류)로 분류한 표준 표입니다.</p>
+            
+            <div class="grid grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto pr-1 text-xs sm:text-sm">
+                <div class="bg-slate-800 p-2.5 rounded-xl border-l-4 border-slate-400 flex items-center justify-between">
+                    <div><span class="font-black text-amber-300 font-num">000</span> 총류</div>
+                    <span class="text-lg">💻</span>
+                </div>
+                <div class="bg-slate-800 p-2.5 rounded-xl border-l-4 border-purple-400 flex items-center justify-between">
+                    <div><span class="font-black text-amber-300 font-num">100</span> 철학</div>
+                    <span class="text-lg">🧠</span>
+                </div>
+                <div class="bg-slate-800 p-2.5 rounded-xl border-l-4 border-pink-400 flex items-center justify-between">
+                    <div><span class="font-black text-amber-300 font-num">200</span> 종교</div>
+                    <span class="text-lg">🕊️</span>
+                </div>
+                <div class="bg-slate-800 p-2.5 rounded-xl border-l-4 border-blue-400 flex items-center justify-between">
+                    <div><span class="font-black text-amber-300 font-num">300</span> 사회과학</div>
+                    <span class="text-lg">⚖️</span>
+                </div>
+                <div class="bg-slate-800 p-2.5 rounded-xl border-l-4 border-emerald-400 flex items-center justify-between">
+                    <div><span class="font-black text-amber-300 font-num">400</span> 자연과학</div>
+                    <span class="text-lg">🔬</span>
+                </div>
+                <div class="bg-slate-800 p-2.5 rounded-xl border-l-4 border-orange-400 flex items-center justify-between">
+                    <div><span class="font-black text-amber-300 font-num">500</span> 기술과학</div>
+                    <span class="text-lg">⚙️</span>
+                </div>
+                <div class="bg-slate-800 p-2.5 rounded-xl border-l-4 border-rose-400 flex items-center justify-between">
+                    <div><span class="font-black text-amber-300 font-num">600</span> 예술</div>
+                    <span class="text-lg">🎨</span>
+                </div>
+                <div class="bg-slate-800 p-2.5 rounded-xl border-l-4 border-cyan-400 flex items-center justify-between">
+                    <div><span class="font-black text-amber-300 font-num">700</span> 언어</div>
+                    <span class="text-lg">🗣️</span>
+                </div>
+                <div class="bg-slate-800 p-2.5 rounded-xl border-l-4 border-amber-400 flex items-center justify-between">
+                    <div><span class="font-black text-amber-300 font-num">800</span> 문학</div>
+                    <span class="text-lg">📖</span>
+                </div>
+                <div class="bg-slate-800 p-2.5 rounded-xl border-l-4 border-yellow-600 flex items-center justify-between">
+                    <div><span class="font-black text-amber-300 font-num">900</span> 역사</div>
+                    <span class="text-lg">📜</span>
+                </div>
+            </div>
+
+            <button onclick="closeGuideModal()" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl transition-all text-sm">
+                확인하고 게임하기
+            </button>
+        </div>
+    </div>
+
+    <!-- Victory Celebration Modal -->
+    <div id="victoryModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 rounded-3xl p-6 max-w-sm sm:max-w-md w-full text-center shadow-2xl border-2 border-amber-400 animate-pop-in">
+            <div class="text-5xl sm:text-6xl mb-2">🏆📚🎉</div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-amber-400 mb-1">KDC 마스터 달성!</h2>
+            <p class="text-slate-300 text-sm mb-4">모든 분류 기호와 명칭의 짝을 찾아냈습니다!</p>
+
+            <div id="modalStars" class="text-3xl sm:text-4xl mb-4 tracking-widest text-amber-400">
+                ⭐⭐⭐
+            </div>
+            
+            <div class="bg-slate-800/90 rounded-2xl p-4 mb-5 border border-slate-700 text-left space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-slate-400">최종 점수:</span>
+                    <span id="modalScore" class="font-extrabold text-amber-400 text-base font-num">0점</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">걸린 시간:</span>
+                    <span id="modalTime" class="font-extrabold text-cyan-400 text-base font-num">00:00</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">총 시도 횟수:</span>
+                    <span id="modalMoves" class="font-extrabold text-purple-400 text-base font-num">0회</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">최대 콤보 기록:</span>
+                    <span id="modalMaxCombo" class="font-extrabold text-rose-400 text-base font-num">0 Combo</span>
+                </div>
+            </div>
+
+            <button onclick="closeModalAndRestart()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-lg py-3 rounded-2xl shadow-lg transition-all active:scale-95">
+                다시 도전하기 🚀
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // KDC Data Definitions (10 Pairs = 20 Cards)
+        const KDC_ITEMS = [
+            { code: '000', name: '총류', icon: '💻', color: '#64748b', bdColor: '#94a3b8' },
+            { code: '100', name: '철학', icon: '🧠', color: '#8b5cf6', bdColor: '#a78bfa' },
+            { code: '200', name: '종교', icon: '🕊️', color: '#ec4899', bdColor: '#f472b6' },
+            { code: '300', name: '사회과학', icon: '⚖️', color: '#3b82f6', bdColor: '#60a5fa' },
+            { code: '400', name: '자연과학', icon: '🔬', color: '#10b981', bdColor: '#34d399' },
+            { code: '500', name: '기술과학', icon: '⚙️', color: '#f97316', bdColor: '#fb923c' },
+            { code: '600', name: '예술', icon: '🎨', color: '#f43f5e', bdColor: '#fb7185' },
+            { code: '700', name: '언어', icon: '🗣️', color: '#06b6d4', bdColor: '#22d3ee' },
+            { code: '800', name: '문학', icon: '📖', color: '#d97706', bdColor: '#fbbf24' },
+            { code: '900', name: '역사', icon: '📜', color: '#ca8a04', bdColor: '#facc15' }
+        ];
+
+        // Game Configuration & State
+        let cardsData = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let score = 0;
+        let moves = 0;
+        let comboCount = 0;
+        let maxCombo = 0;
+        let bestScore = 0;
+        let timerInterval = null;
+        let secondsElapsed = 0;
+        let isBoardLocked = false;
+        let soundEnabled = true;
+
+        // Web Audio API Sound Synth Engine
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+
+                if (type === 'flip') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+
+                } else if (type === 'match') {
+                    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                    notes.forEach((freq, i) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + i * 0.06);
+                        gain.gain.setValueAtTime(0.25, now + i * 0.06);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.06 + 0.2);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + i * 0.06);
+                        osc.stop(now + i * 0.06 + 0.2);
+                    });
+
+                } else if (type === 'mismatch') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.linearRampToValueAtTime(140, now + 0.2);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+
+                } else if (type === 'win') {
+                    const melody = [
+                        { f: 523.25, d: 0.12, t: 0 },    // C5
+                        { f: 659.25, d: 0.12, t: 0.12 }, // E5
+                        { f: 783.99, d: 0.12, t: 0.24 }, // G5
+                        { f: 1046.5, d: 0.4,  t: 0.36 }  // C6
+                    ];
+                    melody.forEach(note => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(note.f, now + note.t);
+                        gain.gain.setValueAtTime(0.3, now + note.t);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + note.t + note.d);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + note.t);
+                        osc.stop(now + note.t + note.d);
+                    });
+                }
+            } catch (e) {
+                console.error("Audio playback error:", e);
+            }
+        }
+
+        // Toggle Sound On/Off
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            const text = document.getElementById('soundText');
+            const btn = document.getElementById('soundToggleBtn');
+
+            if (soundEnabled) {
+                icon.textContent = '🔊';
+                text.textContent = '소리 ON';
+                btn.className = "bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold py-1.5 px-3 rounded-xl shadow-md border border-slate-600 transition-all active:scale-95 text-xs sm:text-sm flex items-center gap-1";
+                playSound('flip');
+            } else {
+                icon.textContent = '🔇';
+                text.textContent = '소리 OFF';
+                btn.className = "bg-slate-800 text-slate-500 font-bold py-1.5 px-3 rounded-xl shadow-md border border-slate-700 transition-all active:scale-95 text-xs sm:text-sm flex items-center gap-1";
+            }
+        }
+
+        // Modal Handlers
+        function openGuideModal() {
+            document.getElementById('guideModal').classList.remove('hidden');
+            document.getElementById('guideModal').classList.add('flex');
+        }
+
+        function closeGuideModal() {
+            document.getElementById('guideModal').classList.add('hidden');
+            document.getElementById('guideModal').classList.remove('flex');
+        }
+
+        // Load & Save Best Score
+        function loadBestScore() {
+            bestScore = parseInt(localStorage.getItem('kdc_game_best_score')) || 0;
+            document.getElementById('bestScoreText').textContent = bestScore;
+        }
+
+        function saveBestScore() {
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('kdc_game_best_score', bestScore);
+                document.getElementById('bestScoreText').textContent = bestScore;
+            }
+        }
+
+        // Timer Logic
+        function startTimer() {
+            stopTimer();
+            secondsElapsed = 0;
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+            const secs = (secondsElapsed % 60).toString().padStart(2, '0');
+            document.getElementById('timerText').textContent = `${mins}:${secs}`;
+        }
+
+        // Game Initialization
+        function initGame() {
+            stopTimer();
+            startTimer();
+
+            score = 0;
+            moves = 0;
+            comboCount = 0;
+            maxCombo = 0;
+            matchedPairs = 0;
+            flippedCards = [];
+            isBoardLocked = false;
+
+            document.getElementById('scoreText').textContent = score;
+            document.getElementById('movesText').textContent = moves;
+            loadBestScore();
+
+            // Create 20 Deck Cards (10 Code Cards + 10 Name Cards)
+            const deck = [];
+            KDC_ITEMS.forEach(item => {
+                // Card 1: Code Card (e.g., '000')
+                deck.push({
+                    code: item.code,
+                    type: 'code',
+                    display: item.code,
+                    subText: '분류 기호',
+                    icon: item.icon,
+                    color: item.color,
+                    bdColor: item.bdColor
+                });
+                // Card 2: Name Card (e.g., '총류')
+                deck.push({
+                    code: item.code,
+                    type: 'name',
+                    display: item.name,
+                    subText: '분류 명칭',
+                    icon: item.icon,
+                    color: item.color,
+                    bdColor: item.bdColor
+                });
+            });
+
+            // Fisher-Yates Shuffle
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+
+            cardsData = deck.map((card, index) => ({
+                id: index,
+                ...card,
+                isFlipped: false,
+                isMatched: false
+            }));
+
+            renderBoard();
+        }
+
+        // Render Cards Grid
+        function renderBoard() {
+            const board = document.getElementById('gameBoard');
+            board.innerHTML = '';
+
+            cardsData.forEach((card) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = "perspective-1000 h-20 sm:h-24 md:h-28 cursor-pointer";
+                cardEl.setAttribute('data-id', card.id);
+
+                const isCode = card.type === 'code';
+                const mainTextStyle = isCode 
+                    ? "font-num font-black text-xl sm:text-2xl tracking-wider text-slate-800" 
+                    : "font-extrabold text-lg sm:text-xl text-slate-900";
+
+                cardEl.innerHTML = `
+                    <div class="card-inner ${card.isFlipped ? 'flipped' : ''} ${card.isMatched ? 'matched' : ''}" id="card-inner-${card.id}">
+                        <div class="card-back">
+                            <span class="text-xl sm:text-2xl mb-1">📖</span>
+                            <span class="text-[10px] sm:text-xs font-bold tracking-widest text-blue-200">KDC</span>
+                        </div>
+                        <div class="card-front p-1 sm:p-2" style="border-color: ${card.bdColor}">
+                            <div class="text-xs sm:text-sm mb-0.5">${card.icon}</div>
+                            <div class="${mainTextStyle}">${card.display}</div>
+                            <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">${card.subText}</div>
+                        </div>
+                    </div>
+                `;
+
+                cardEl.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    handleCardClick(card.id);
+                });
+
+                board.appendChild(cardEl);
+            });
+        }
+
+        // Card Touch / Click Handler
+        function handleCardClick(id) {
+            if (isBoardLocked) return;
+
+            const card = cardsData[id];
+            if (card.isFlipped || card.isMatched) return;
+
+            card.isFlipped = true;
+            flippedCards.push(card);
+            updateCardUI(id);
+            playSound('flip');
+
+            if (flippedCards.length === 2) {
+                moves++;
+                document.getElementById('movesText').textContent = moves;
+                checkMatch();
+            }
+        }
+
+        function updateCardUI(id) {
+            const innerNode = document.getElementById(`card-inner-${id}`);
+            const card = cardsData[id];
+            if (!innerNode) return;
+
+            if (card.isFlipped) {
+                innerNode.classList.add('flipped');
+            } else {
+                innerNode.classList.remove('flipped');
+            }
+
+            if (card.isMatched) {
+                innerNode.classList.add('matched');
+            }
+        }
+
+        // Show floating combo bonus animation
+        function showComboAnimation(combo, bonus) {
+            const container = document.getElementById('comboContainer');
+            const el = document.createElement('div');
+            el.className = "combo-animation font-black text-amber-300 text-2xl sm:text-4xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]";
+            el.textContent = `${combo} COMBO! +${bonus}pt`;
+            container.appendChild(el);
+
+            setTimeout(() => {
+                if (el.parentNode) el.parentNode.removeChild(el);
+            }, 800);
+        }
+
+        // Match Check
+        function checkMatch() {
+            isBoardLocked = true;
+            const [card1, card2] = flippedCards;
+
+            // Equal code means same KDC category (e.g. 000 code card + 총류 name card)
+            if (card1.code === card2.code && card1.type !== card2.type) {
+                // SUCCESS MATCH!
+                setTimeout(() => {
+                    card1.isMatched = true;
+                    card2.isMatched = true;
+                    updateCardUI(card1.id);
+                    updateCardUI(card2.id);
+
+                    comboCount++;
+                    if (comboCount > maxCombo) maxCombo = comboCount;
+
+                    // Base 100 points + Combo Bonus
+                    const bonus = (comboCount - 1) * 30;
+                    const gainedPoints = 100 + bonus;
+                    score += gainedPoints;
+
+                    document.getElementById('scoreText').textContent = score;
+                    playSound('match');
+
+                    if (comboCount > 1) {
+                        showComboAnimation(comboCount, gainedPoints);
+                    }
+
+                    flippedCards = [];
+                    matchedPairs++;
+                    isBoardLocked = false;
+
+                    if (matchedPairs === 10) { // All 10 pairs matched!
+                        handleGameClear();
+                    }
+                }, 300);
+
+            } else {
+                // MISMATCH
+                comboCount = 0; // Reset Combo
+
+                setTimeout(() => {
+                    const inner1 = document.getElementById(`card-inner-${card1.id}`);
+                    const inner2 = document.getElementById(`card-inner-${card2.id}`);
+                    if (inner1) inner1.classList.add('mismatch');
+                    if (inner2) inner2.classList.add('mismatch');
+                    playSound('mismatch');
+                }, 350);
+
+                setTimeout(() => {
+                    card1.isFlipped = false;
+                    card2.isFlipped = false;
+                    updateCardUI(card1.id);
+                    updateCardUI(card2.id);
+
+                    const inner1 = document.getElementById(`card-inner-${card1.id}`);
+                    const inner2 = document.getElementById(`card-inner-${card2.id}`);
+                    if (inner1) inner1.classList.remove('mismatch');
+                    if (inner2) inner2.classList.remove('mismatch');
+
+                    flippedCards = [];
+                    isBoardLocked = false;
+                }, 1000);
+            }
+        }
+
+        // Victory Logic
+        function handleGameClear() {
+            stopTimer();
+            saveBestScore();
+            playSound('win');
+
+            // Fireworks effect
+            if (typeof confetti === 'function') {
+                const duration = 2.5 * 1000;
+                const end = Date.now() + duration;
+
+                const frame = () => {
+                    confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 } });
+                    confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 } });
+                    if (Date.now() < end) {
+                        requestAnimationFrame(frame);
+                    }
+                };
+                frame();
+            }
+
+            // Star Rating Calculation
+            let stars = '⭐⭐⭐';
+            if (moves > 22) {
+                stars = '⭐';
+            } else if (moves > 15) {
+                stars = '⭐⭐';
+            }
+            document.getElementById('modalStars').textContent = stars;
+
+            // Modal Stats Update
+            document.getElementById('modalScore').textContent = `${score}점`;
+            document.getElementById('modalTime').textContent = document.getElementById('timerText').textContent;
+            document.getElementById('modalMoves').textContent = `${moves}회`;
+            document.getElementById('modalMaxCombo').textContent = `${maxCombo} Combo`;
+
+            // Open Victory Modal
+            setTimeout(() => {
+                const modal = document.getElementById('victoryModal');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }, 500);
+        }
+
+        function restartGame() {
+            const modal = document.getElementById('victoryModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            initGame();
+        }
+
+        function closeModalAndRestart() {
+            restartGame();
+        }
+
+        // Window Load Trigger
+        window.onload = function() {
+            initGame();
+        };
+    </script>
+</body>
+</html>

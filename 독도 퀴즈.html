@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>독도의 날 퀴즈</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#e9f5fb;--card:#fff;--ink:#12354a;--sub:#52707f;--sea:#1b7fa8;--line:#b9d9e8;--ok:#1f9d63;--okbg:#dff5ea;--no:#d4543f;--nobg:#fde8e3;--sun:#f2b632}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d2230;--card:#143246;--ink:#eaf4f9;--sub:#9db8c6;--sea:#5ab8e0;--line:#2b5670;--ok:#5fd6a0;--okbg:#17432f;--no:#ff8a75;--nobg:#4a2620}}
+:root[data-theme="dark"]{--bg:#0d2230;--card:#143246;--ink:#eaf4f9;--sub:#9db8c6;--sea:#5ab8e0;--line:#2b5670;--ok:#5fd6a0;--okbg:#17432f;--no:#ff8a75;--nobg:#4a2620}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Jua","Apple SD Gothic Neo","Malgun Gothic",sans-serif;min-height:100vh;display:flex;justify-content:center;padding:20px 16px}
+main{width:100%;max-width:720px}
+.card{background:var(--card);border:2px solid var(--line);border-radius:24px;padding:24px}
+h1{font-size:clamp(30px,6vw,44px);margin:8px 0;line-height:1.2}
+p{font-size:clamp(18px,3vw,22px);line-height:1.6;color:var(--sub);margin:8px 0}
+.hero{text-align:center;padding:36px 24px}
+.wave{height:36px;margin:20px -24px -24px;border-radius:0 0 22px 22px;background:repeating-linear-gradient(90deg,var(--sea) 0 40px,transparent 40px 80px);opacity:.18}
+button{font:inherit;cursor:pointer;border:0}
+button:focus-visible{outline:4px solid var(--sun);outline-offset:2px}
+.btn{background:var(--sea);color:#fff;font-size:clamp(22px,4vw,28px);padding:16px 36px;border-radius:999px;margin-top:20px}
+:root:not([data-theme="light"]) .btn{color:#06202e}
+.top{display:flex;justify-content:space-between;align-items:center;font-size:20px;margin-bottom:10px}
+.bar{height:14px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:18px}
+.bar i{display:block;height:100%;background:var(--sea);transition:width .4s}
+.q{font-size:clamp(24px,4.6vw,32px);line-height:1.45;margin:6px 0 20px}
+.opts{display:grid;gap:12px}
+@media(min-width:600px){.opts{grid-template-columns:1fr 1fr}}
+.opt{background:var(--card);color:var(--ink);border:3px solid var(--line);border-radius:18px;padding:18px 16px;min-height:76px;font-size:clamp(20px,3.6vw,26px);text-align:left;display:flex;gap:12px;align-items:center}
+.opt b{flex:none;width:38px;height:38px;border-radius:50%;background:var(--line);display:grid;place-items:center;font-weight:400}
+.opt:hover:not(:disabled){border-color:var(--sea)}
+.opt.no{background:var(--nobg);border-color:var(--no);animation:shake .4s}
+.opt.ok{background:var(--okbg);border-color:var(--ok);animation:pop .4s}
+.opt:disabled{cursor:default}
+.fb{margin-top:18px;border-radius:18px;padding:14px 18px;font-size:clamp(20px,3.6vw,26px);line-height:1.5;min-height:60px}
+.fb.ok{background:var(--okbg);color:var(--ok)}
+.fb.no{background:var(--nobg);color:var(--no)}
+.fb small{display:block;color:var(--ink);font-size:.8em;margin-top:4px}
+.score{font-size:clamp(70px,16vw,120px);color:var(--sea);line-height:1;margin:10px 0}
+.dots{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:16px 0}
+.dots span{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:var(--nobg);color:var(--no)}
+.dots span.g{background:var(--okbg);color:var(--ok)}
+.hide{display:none}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+@keyframes pop{50%{transform:scale(1.04)}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<section id="start" class="card hero">
+  <div style="font-size:64px" aria-hidden="true">🏝️</div>
+  <h1>독도의 날 퀴즈</h1>
+  <p>10월 25일은 독도의 날이에요.<br>독도에 대해 얼마나 알고 있는지 10문제로 확인해 봐요!</p>
+  <button class="btn" id="go">퀴즈 시작</button>
+  <div class="wave"></div>
+</section>
+
+<section id="quiz" class="card hide">
+  <div class="top"><span id="no"></span><span id="sc"></span></div>
+  <div class="bar"><i id="pg"></i></div>
+  <h2 class="q" id="q"></h2>
+  <div class="opts" id="opts"></div>
+  <div class="fb hide" id="fb" role="status" aria-live="polite"></div>
+  <div style="text-align:center"><button class="btn hide" id="next">다음 문제</button></div>
+</section>
+
+<section id="end" class="card hero hide">
+  <div style="font-size:64px" id="medal" aria-hidden="true"></div>
+  <h1 id="msg"></h1>
+  <div class="score" id="total"></div>
+  <p id="sub"></p>
+  <div class="dots" id="dots"></div>
+  <button class="btn" id="retry">다시 도전</button>
+</section>
+</main>
+
+<script>
+const Q=[
+{q:"독도의 날은 몇 월 며칠일까요?",a:["10월 25일","3월 1일","8월 15일","10월 3일"],c:0,e:"1900년 10월 25일 대한제국 칙령 제41호로 독도를 우리 행정구역으로 분명히 밝혔어요."},
+{q:"독도는 어느 바다에 있을까요?",a:["동해","서해","남해","지중해"],c:0,e:"독도는 우리나라 가장 동쪽에 있는 섬으로 동해에 있어요."},
+{q:"독도는 어느 나라의 땅일까요?",a:["일본","대한민국","중국","러시아"],c:1,e:"독도는 역사적으로도, 국제법적으로도 대한민국의 아름다운 영토예요."},
+{q:"독도를 이루는 두 개의 큰 섬 이름은?",a:["동도와 서도","남도와 북도","상도와 하도","대도와 소도"],c:0,e:"독도는 동도와 서도, 그리고 주변의 작은 바위섬들로 이루어져 있어요."},
+{q:"독도에 사는 대표적인 새는 무엇일까요?",a:["독수리","참새","괭이갈매기","까치"],c:2,e:"독도에는 울음소리가 고양이 같은 괭이갈매기가 많이 살아요."},
+{q:"독도 바다에 살았지만 지금은 보기 힘든 동물은?",a:["북극곰","펭귄","악어","강치"],c:3,e:"강치(바다사자)는 독도 바위에서 쉬던 동물이었지만 지금은 볼 수 없어요."},
+{q:"독도의 주소가 속한 곳은 어디일까요?",a:["제주특별자치도","부산광역시","경상북도 울릉군","강원특별자치도 속초시"],c:2,e:"독도의 주소는 경상북도 울릉군 독도리예요."},
+{q:"신라의 이사부 장군이 복속시킨 나라는?",a:["백제","고구려","우산국","가야"],c:2,e:"512년 이사부가 우산국을 신라에 복속시켰어요. 우산국은 울릉도와 독도를 포함했어요."},
+{q:"일본 어부들에게 울릉도와 독도가 우리 땅이라고 당당히 알린 조선의 인물은?",a:["안용복","이순신","세종대왕","김구"],c:0,e:"어부 안용복은 일본에 건너가 울릉도와 독도가 조선 땅임을 알렸어요."},
+{q:"독도에 가려면 보통 어느 섬에서 배를 타고 갈까요?",a:["제주도","강화도","거제도","울릉도"],c:3,e:"독도는 울릉도에서 배로 약 1시간 30분 정도 걸려요."},
+{q:"독도에 늘 펄럭이는 우리나라 국기의 이름은?",a:["태극기","성조기","오성홍기","무궁화기"],c:0,e:"독도에는 태극기가 펄럭이고 있어요."},
+{q:"독도를 지키는 경찰 부대의 이름은?",a:["독도경비대","해병대","소방대","구조대"],c:0,e:"독도경비대가 24시간 독도를 지키고 있어요."},
+{q:"독도는 바다 속 화산이 터져서 만들어진 어떤 섬일까요?",a:["산호섬","화산섬","모래섬","갯벌섬"],c:1,e:"독도는 아주 오래전 바다 속 화산 활동으로 생긴 화산섬이에요."},
+{q:"독도는 자연을 보호하기 위해 어떤 곳으로 지정되어 있을까요?",a:["놀이공원","공장 지대","천연기념물","주차장"],c:2,e:"독도는 천연기념물로 지정되어 소중히 보호받고 있어요."},
+{q:"독도가 우리 땅임을 알려 주는 옛 책은 무엇일까요?",a:["동의보감","세종실록지리지","훈민정음","난중일기"],c:1,e:"세종실록지리지에는 우산도(독도)와 무릉도(울릉도)가 우리 땅으로 기록되어 있어요."},
+{q:"독도의 날이 있는 계절은 언제일까요?",a:["봄","여름","가을","겨울"],c:2,e:"독도의 날은 10월 25일, 가을이에요."},
+{q:"독도 서도에서 가장 높은 봉우리의 이름은?",a:["백두봉","한라봉","설악봉","대한봉"],c:3,e:"서도의 가장 높은 봉우리는 대한봉이에요."},
+{q:"독도의 주소는 경상북도 울릉군 ○○리예요. ○○에 들어갈 말은?",a:["동해","독도","울릉","태극"],c:1,e:"독도의 주소는 경상북도 울릉군 독도리예요."},
+{q:"독도를 지키기 위한 가장 알맞은 행동은?",a:["관심 갖고 바르게 알리기","모른 척하기","쓰레기 버리기","친구와 싸우기"],c:0,e:"독도의 역사를 바르게 알고 친구들에게 알리는 것이 독도 사랑이에요."},
+{q:"독도 동도에서 배들의 길을 밝혀 주는 건물은?",a:["놀이터","도서관","등대","학교"],c:2,e:"동도에는 바다를 오가는 배를 안내하는 독도등대가 있어요."}
+];
+const $=id=>document.getElementById(id);
+let i=0,score=0,tries=0,res=[],ac,R=[],prev=null;
+
+function tone(f,d,t="sine",delay=0){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();
+const o=ac.createOscillator(),g=ac.createGain(),s=ac.currentTime+delay;
+o.type=t;o.frequency.value=f;g.gain.setValueAtTime(.25,s);g.gain.exponentialRampToValueAtTime(.001,s+d);
+o.connect(g);g.connect(ac.destination);o.start(s);o.stop(s+d)}catch(e){}}
+const sndOk=()=>{tone(660,.15,"sine");tone(880,.15,"sine",.12);tone(1320,.3,"sine",.24)};
+const sndNo=()=>{tone(220,.25,"sawtooth");tone(165,.35,"sawtooth",.2)};
+const sndEnd=()=>[523,659,784,1047].forEach((f,k)=>tone(f,.25,"triangle",k*.15));
+
+function show(id){["start","quiz","end"].forEach(s=>$(s).classList.toggle("hide",s!==id))}
+function shuffle(a){a=a.slice();for(let k=a.length-1;k>0;k--){const j=Math.random()*(k+1)|0;[a[k],a[j]]=[a[j],a[k]]}return a}
+
+function build(){
+  if(!prev)return shuffle(Q.slice(0,10));
+  const k=1+(Math.random()*3|0); // 이전 문제 중 1~3개만 다시 출제
+  const keep=shuffle(prev).slice(0,k);
+  const fresh=shuffle(Q.filter(x=>!prev.includes(x))).slice(0,10-k);
+  return shuffle(keep.concat(fresh));
+}
+function start(){R=build();prev=R;i=0;score=0;res=[];show("quiz");render()}
+function render(){
+  const d=R[i];tries=0;
+  $("no").textContent=`${i+1} / ${R.length}번 문제`;
+  $("sc").textContent=`점수 ${score}점`;
+  $("pg").style.width=(i/R.length*100)+"%";
+  $("q").textContent=d.q;
+  $("fb").className="fb hide";$("next").classList.add("hide");
+  const box=$("opts");box.innerHTML="";
+  shuffle(d.a.map((t,k)=>({t,ok:k===d.c}))).forEach((o,k)=>{
+    const b=document.createElement("button");b.className="opt";
+    b.innerHTML=`<b>${k+1}</b><span></span>`;b.lastChild.textContent=o.t;
+    b.onclick=()=>pick(b,o.ok);box.appendChild(b)});
+}
+function pick(b,ok){
+  const fb=$("fb"),d=R[i];
+  if(ok){
+    sndOk();b.classList.add("ok");
+    document.querySelectorAll(".opt").forEach(x=>x.disabled=true);
+    if(tries===0){score++;res.push(1)}else res.push(0);
+    $("sc").textContent=`점수 ${score}점`;
+    fb.className="fb ok";fb.innerHTML=`🎉 정답이에요!<small></small>`;fb.querySelector("small").textContent=d.e;
+    $("next").textContent=i===R.length-1?"결과 보기":"다음 문제";
+    $("next").classList.remove("hide");$("pg").style.width=((i+1)/R.length*100)+"%";
+  }else{
+    sndNo();tries++;b.classList.add("no");b.disabled=true;
+    fb.className="fb no";fb.textContent="🤔 다시 생각해보세요!";
+  }
+}
+function finish(){
+  show("end");sndEnd();
+  const m=score*10;
+  $("total").textContent=`${m}점`;
+  $("sub").textContent=`10문제 중 ${score}문제를 한 번에 맞혔어요.`;
+  $("medal").textContent=score===10?"🏆":score>=7?"🥇":score>=4?"🥈":"🌱";
+  $("msg").textContent=score===10?"독도 박사예요!":score>=7?"정말 잘했어요!":score>=4?"조금만 더 힘내요!":"다시 도전해 볼까요?";
+  $("dots").innerHTML=res.map((r,k)=>`<span class="${r?"g":""}" title="${k+1}번">${r?"O":"X"}</span>`).join("");
+}
+document.addEventListener("keydown",e=>{
+  if(!$("quiz").classList.contains("hide")){
+    const n=+e.key;
+    if(n>=1&&n<=4){const b=document.querySelectorAll(".opt")[n-1];if(b&&!b.disabled)b.click()}
+    else if(e.key==="Enter"&&!$("next").classList.contains("hide")&&document.activeElement!==$("next"))$("next").click();
+  }
+});
+$("go").onclick=start;$("retry").onclick=start;
+$("next").onclick=()=>{i<R.length-1?(i++,render()):finish()};
+</script>
+</body>
+</html>

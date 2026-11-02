@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>조선에서 대한제국까지 · 인터랙티브 연표</title>
+<style>
+:root{
+  --bg:#faf6ee; --surface:#fff; --text:#2b2620; --muted:#7a7165; --line:#d9cfbd;
+  --accent:#c0432b; --accent-soft:#f8e3dc; --on-accent:#fff; --shadow:0 10px 30px rgba(60,40,10,.15);
+  --overlay:rgba(30,20,10,.45);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#1b1814; --surface:#2a251f; --text:#f1ebe0; --muted:#a89f90; --line:#4a4236;
+    --accent:#e8745a; --accent-soft:#3d2a24; --on-accent:#1b1814; --shadow:0 10px 30px rgba(0,0,0,.5);
+    --overlay:rgba(0,0,0,.6); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1b1814; --surface:#2a251f; --text:#f1ebe0; --muted:#a89f90; --line:#4a4236;
+  --accent:#e8745a; --accent-soft:#3d2a24; --on-accent:#1b1814; --shadow:0 10px 30px rgba(0,0,0,.5);
+  --overlay:rgba(0,0,0,.6); color-scheme:dark;
+}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{
+  margin:0;height:100%;background:var(--bg);color:var(--text);
+  font-family:"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
+  display:flex;flex-direction:column;overflow-x:hidden;overflow-y:auto;
+}
+header{padding:28px 20px 8px;text-align:center}
+header h1{margin:0;font-size:clamp(22px,4.5vw,34px);letter-spacing:-.02em}
+header p{margin:8px 0 0;color:var(--muted);font-size:clamp(14px,2.6vw,16px)}
+main{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0}
+.stage{position:relative;width:100%;max-width:1100px;margin:0 auto;padding:0 20px}
+.row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.row.top{align-items:end}.row.bottom{align-items:start}
+.spacer{height:clamp(44px,11vh,96px)}
+.axis{position:relative;height:6px;background:var(--line);border-radius:3px;margin:0}
+.fill{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--accent);border-radius:3px;transition:width .55s cubic-bezier(.4,0,.2,1)}
+.tick{position:absolute;top:6px;width:1px;height:8px;background:var(--line)}
+.tick i{position:absolute;top:9px;left:50%;transform:translateX(-50%);font-style:normal;font-size:11px;color:var(--muted);white-space:nowrap;background:var(--bg);padding:0 2px;z-index:2}
+.dot{position:absolute;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:var(--surface);
+  border:3px solid var(--muted);z-index:3;transition:transform .35s,background .35s,border-color .35s,box-shadow .35s}
+.dot.active{background:var(--accent);border-color:var(--accent);transform:scale(1.5);box-shadow:0 0 0 6px var(--accent-soft)}
+svg.links{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+svg.links line{stroke:var(--line);stroke-width:2;stroke-dasharray:4 4;transition:stroke .3s}
+svg.links line.active{stroke:var(--accent);stroke-dasharray:none;stroke-width:2.5}
+.card{
+  justify-self:center;width:100%;max-width:190px;padding:10px 6px;background:var(--surface);border:2px solid var(--line);border-radius:14px;
+  text-align:center;cursor:pointer;color:inherit;font:inherit;transition:transform .35s,border-color .35s,box-shadow .35s;position:relative;z-index:4;
+}
+.card .em{font-size:clamp(22px,5vw,30px);display:block}
+.card .yr{display:block;margin-top:2px;font-weight:700;font-size:clamp(14px,3.4vw,20px);color:var(--muted);transition:color .3s}
+.card b{display:block;margin-top:2px;font-size:clamp(12px,3vw,16px);line-height:1.3;word-break:keep-all}
+.card:hover{transform:translateY(-3px)}
+.card:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.card.active{border-color:var(--accent);box-shadow:var(--shadow);transform:scale(1.07)}
+.card.active .yr{color:var(--accent)}
+.scale-note{text-align:center;color:var(--muted);font-size:12px;margin-top:26px}
+.controls{display:flex;justify-content:center;align-items:center;gap:14px;padding:18px 16px 24px}
+.btn{
+  border:2px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-weight:600;
+  border-radius:999px;padding:10px 20px;cursor:pointer;min-height:44px;transition:.2s;
+}
+.btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover:not(:disabled){color:var(--on-accent);filter:brightness(1.08)}
+.count{color:var(--muted);font-size:14px;min-width:48px;text-align:center}
+
+/* popup */
+.overlay{position:fixed;inset:0;background:var(--overlay);display:flex;align-items:center;justify-content:center;
+  padding:16px;opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s;z-index:20}
+.overlay.show{opacity:1;visibility:visible}
+.modal{
+  width:100%;max-width:520px;max-height:calc(100% - 8px);overflow:auto;background:var(--surface);border-radius:22px;
+  padding:26px 24px 22px;box-shadow:var(--shadow);transform:translateY(24px) scale(.97);transition:transform .3s;position:relative;
+}
+.overlay.show .modal{transform:none}
+.close{position:absolute;top:12px;right:12px;width:40px;height:40px;border-radius:50%;border:0;background:var(--accent-soft);
+  color:var(--text);font-size:20px;cursor:pointer}
+.badge{display:inline-block;background:var(--accent);color:var(--on-accent);font-weight:700;border-radius:999px;padding:4px 14px;font-size:15px}
+.modal h2{margin:12px 0 4px;font-size:clamp(24px,5vw,30px);letter-spacing:-.02em}
+.modal .em{font-size:44px;line-height:1}
+.lead{font-weight:600;color:var(--accent);margin:0 0 12px}
+.modal p.body{margin:0 0 14px;line-height:1.75;font-size:17px;word-break:keep-all}
+.fact{background:var(--accent-soft);border-radius:14px;padding:12px 14px;line-height:1.6;font-size:15.5px;word-break:keep-all}
+.nav{display:flex;justify-content:space-between;gap:10px;margin-top:18px}
+@media (max-width:600px){
+  .overlay{align-items:flex-end;padding:0}
+  .modal{border-radius:22px 22px 0 0;padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏯 조선에서 대한제국까지</h1>
+  <p>사건을 눌러 보세요. 쉬운 설명이 나와요!</p>
+</header>
+<main>
+  <div class="stage" id="stage">
+    <svg class="links" id="links" aria-hidden="true"></svg>
+    <div class="row top" id="top"></div>
+    <div class="spacer"></div>
+    <div class="axis" id="axis"><div class="fill" id="fill"></div></div>
+    <div class="spacer"></div>
+    <div class="row bottom" id="bottom"></div>
+    <div class="scale-note">점 사이의 거리는 실제 흘러간 시간에 비례해요 ⏳</div>
+  </div>
+  <div class="controls">
+    <button class="btn" id="prev" aria-label="이전 사건">← 이전</button>
+    <span class="count" id="count">–</span>
+    <button class="btn primary" id="next" aria-label="다음 사건">다음 →</button>
+  </div>
+</main>
+
+<div class="overlay" id="overlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <button class="close" id="close" aria-label="닫기">✕</button>
+    <div class="em" id="mEm"></div>
+    <div style="margin-top:10px"><span class="badge" id="mYear"></span></div>
+    <h2 id="mTitle"></h2>
+    <p class="lead" id="mLead"></p>
+    <p class="body" id="mBody"></p>
+    <div class="fact" id="mFact"></div>
+    <div class="nav">
+      <button class="btn" id="mPrev">← 이전 사건</button>
+      <button class="btn primary" id="mNext">다음 사건 →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const EVENTS = [
+  {year:1392,title:"조선 건국",em:"👑",
+   lead:"새로운 나라, 조선이 태어났어요!",
+   body:"고려라는 나라가 오래되자 나라 살림이 어려워졌어요. 이때 이성계 장군이 사람들의 도움을 받아 새 나라 ‘조선’을 세우고 첫 번째 임금님이 되었어요. 수도는 한양이었는데, 바로 지금의 서울이에요.",
+   fact:"💡 조선은 약 500년 동안 이어진, 아주 오래가는 나라였어요."},
+  {year:1418,title:"세종대왕 즉위",em:"📚",
+   lead:"백성을 사랑한 임금님이 왕이 되었어요.",
+   body:"태종 임금님이 아들 세종에게 왕의 자리를 물려주었어요. 세종대왕은 신분과 상관없이 똑똑한 사람을 뽑아 함께 일했어요. 과학자 장영실도 그중 한 명이에요. 농사짓는 법을 책으로 만들고, 비의 양을 재는 측우기 같은 발명품도 나왔어요.",
+   fact:"💡 세종대왕은 “백성이 배불리 먹고 편하게 사는 것”을 가장 중요하게 생각했어요."},
+  {year:1443,title:"한글 창제",em:"✍️",
+   lead:"누구나 쉽게 배우는 우리 글자가 생겼어요!",
+   body:"그때는 어려운 한자를 써야 해서, 대부분의 백성이 글을 읽고 쓰지 못했어요. 세종대왕은 이런 백성을 안타깝게 여겨 배우기 쉬운 새 글자를 만들었어요. 바로 한글이에요! 처음 이름은 ‘훈민정음’이고, ‘백성을 가르치는 바른 소리’라는 뜻이에요.",
+   fact:"💡 1443년에 만들고, 1446년에 온 나라에 알렸어요. 지금도 매년 10월 9일은 한글날이에요."},
+  {year:1592,title:"임진왜란",em:"⚓",
+   lead:"일본이 쳐들어와서 7년 동안 싸웠어요.",
+   body:"1592년에 일본군이 바다를 건너와 조선을 공격했어요. 이순신 장군은 튼튼한 거북선과 뛰어난 작전으로 바다에서 일본군을 물리쳤어요. 나라 곳곳에서는 평범한 백성들이 의병이 되어 힘을 보탰어요. 전쟁은 7년이나 계속되었고, 많은 사람이 힘든 시간을 보냈어요.",
+   fact:"💡 ‘임진’은 1592년을 뜻하는 해의 이름이고, ‘왜란’은 일본이 일으킨 난리라는 뜻이에요."},
+  {year:1636,title:"병자호란",em:"🏔️",
+   lead:"이번에는 청나라가 쳐들어왔어요.",
+   body:"1636년 겨울, 청나라 군대가 조선으로 들어왔어요. 인조 임금님은 산속에 있는 남한산성으로 피했지만, 추위와 배고픔 속에서 오래 버티기 어려웠어요. 결국 전쟁은 끝났지만, 많은 백성이 다치거나 고향을 떠나야 했어요.",
+   fact:"💡 임진왜란 이후 40여 년 만에 또 큰 전쟁이 일어난 거예요."},
+  {year:1897,title:"대한제국 선포",em:"🇰🇷",
+   lead:"조선이 ‘대한제국’으로 새롭게 태어났어요.",
+   body:"세계의 여러 나라들이 조선에 관심을 가지던 때였어요. 고종 임금님은 우리나라가 스스로 힘을 키우는 튼튼한 나라임을 알리고 싶었어요. 그래서 나라 이름을 ‘대한제국’으로 바꾸고, 스스로 황제가 되었어요. 전기와 전차, 새 학교 같은 새로운 문물도 들어왔어요.",
+   fact:"💡 ‘대한민국’이라는 이름의 ‘대한’은 바로 이 ‘대한제국’에서 이어진 이름이에요."}
+];
+
+const $ = id => document.getElementById(id);
+const overlay = $("overlay"), axis = $("axis"), links = $("links"), stage = $("stage");
+let cur = -1, lastFocus = null;
+const cards = [], dots = [], lines = [];
+const Y0 = EVENTS[0].year, Y1 = EVENTS[EVENTS.length - 1].year;
+const pct = y => (y - Y0) / (Y1 - Y0) * 100;
+const NS = "http://www.w3.org/2000/svg";
+
+for (let y = 1400; y < Y1; y += 100) {
+  const t = document.createElement("div");
+  t.className = "tick"; t.style.left = pct(y) + "%";
+  t.innerHTML = "<i>" + y + "</i>";
+  axis.appendChild(t);
+}
+EVENTS.forEach((e, i) => {
+  const b = document.createElement("button");
+  b.className = "card";
+  b.setAttribute("aria-label", e.year + "년 " + e.title);
+  b.innerHTML = '<span class="em">' + e.em + '</span><span class="yr">' + e.year + '</span><b>' + e.title + '</b>';
+  b.addEventListener("click", () => select(i, true));
+  $(i % 2 === 0 ? "top" : "bottom").appendChild(b);
+  cards.push(b);
+  const d = document.createElement("div");
+  d.className = "dot"; d.style.left = pct(e.year) + "%";
+  axis.appendChild(d); dots.push(d);
+  const l = document.createElementNS(NS, "line");
+  links.appendChild(l); lines.push(l);
+});
+
+function layout(){
+  const sr = stage.getBoundingClientRect();
+  EVENTS.forEach((e, i) => {
+    const c = cards[i].getBoundingClientRect(), d = dots[i].getBoundingClientRect();
+    const top = i % 2 === 0;
+    const l = lines[i];
+    l.setAttribute("x1", c.left + c.width / 2 - sr.left);
+    l.setAttribute("y1", (top ? c.bottom : c.top) - sr.top);
+    l.setAttribute("x2", d.left + d.width / 2 - sr.left);
+    l.setAttribute("y2", d.top + d.height / 2 - sr.top);
+  });
+}
+
+function select(i, open){
+  if (i < 0 || i >= EVENTS.length) return;
+  cur = i;
+  cards.forEach((n, k) => n.classList.toggle("active", k === i));
+  dots.forEach((n, k) => n.classList.toggle("active", k === i));
+  lines.forEach((n, k) => n.classList.toggle("active", k === i));
+  $("fill").style.width = pct(EVENTS[i].year) + "%";
+  $("count").textContent = (i + 1) + " / " + EVENTS.length;
+  $("prev").disabled = $("mPrev").disabled = i === 0;
+  $("next").disabled = $("mNext").disabled = i === EVENTS.length - 1;
+  const e = EVENTS[i];
+  $("mEm").textContent = e.em;
+  $("mYear").textContent = e.year + "년";
+  $("mTitle").textContent = e.title;
+  $("mLead").textContent = e.lead;
+  $("mBody").textContent = e.body;
+  $("mFact").textContent = e.fact;
+  if (open) openModal();
+}
+
+function openModal(){
+  if (!overlay.classList.contains("show")) lastFocus = document.activeElement;
+  overlay.classList.add("show");
+  overlay.setAttribute("aria-hidden", "false");
+  $("close").focus({preventScroll:true});
+}
+function closeModal(){
+  overlay.classList.remove("show");
+  overlay.setAttribute("aria-hidden", "true");
+  if (lastFocus && lastFocus.focus) lastFocus.focus({preventScroll:true});
+}
+
+$("close").onclick = closeModal;
+overlay.addEventListener("click", e => { if (e.target === overlay) closeModal(); });
+$("prev").onclick = () => select(Math.max(cur, 1) - 1, false);
+$("next").onclick = () => select(cur < 0 ? 0 : cur + 1, false);
+$("mPrev").onclick = () => select(cur - 1, true);
+$("mNext").onclick = () => select(cur + 1, true);
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeModal();
+  else if (e.key === "ArrowLeft") select(Math.max(cur - 1, 0), overlay.classList.contains("show"));
+  else if (e.key === "ArrowRight") select(Math.min(cur + 1, EVENTS.length - 1), overlay.classList.contains("show"));
+});
+
+// initial state: first event highlighted, popup closed
+select(0, false);
+layout();
+addEventListener("resize", layout);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+</script>
+</body>
+</html>

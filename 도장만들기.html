@@ -1,0 +1,976 @@
+<!-- ... existing code ... -->
+    <title>모바일/PC 겸용 투명 PNG 전자 도장 & 서명 생성기</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Commercial/Royalty-Free Korean Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&family=East+Sea+Dokdo&family=Gowun+Batang:wght@400;700&family=Nanum+Gothic:wght@400;700;800&family=Nanum+Myeongjo:wght@400;700;800&family=Nanum+Pen+Script&family=Song+Myung&family=Gowun+Dodum&family=Gamja+Flower&family=Hi+Melody&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: 'Nanum Gothic', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f1f5f9;
+        }
+
+        /* Transparent Checkerboard Pattern for Preview Canvas */
+        .checkerboard-bg {
+            background-color: #ffffff;
+            background-image: linear-gradient(45deg, #cbd5e1 25%, transparent 25%), 
+                              linear-gradient(-45deg, #cbd5e1 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #cbd5e1 75%), 
+                              linear-gradient(-45deg, transparent 75%, #cbd5e1 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+        }
+
+        /* Font Specific Styles */
+        .font-myeongjo { font-family: 'Nanum Myeongjo', serif; }
+        .font-dokdo { font-family: 'East Sea Dokdo', cursive; }
+        .font-pen { font-family: 'Nanum Pen Script', cursive; }
+        .font-batang { font-family: 'Gowun Batang', serif; }
+        .font-dohyeon { font-family: 'Do Hyeon', sans-serif; }
+        .font-song { font-family: 'Song Myung', serif; }
+        .font-black { font-family: 'Black Han Sans', sans-serif; }
+        .font-dodum { font-family: 'Gowun Dodum', sans-serif; }
+        .font-gamja { font-family: 'Gamja Flower', cursive; }
+        .font-himelody { font-family: 'Hi Melody', cursive; }
+
+        /* Toast Animation */
+        #toast {
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Tab Active States */
+        .tab-btn.active {
+            background-color: #ffffff;
+            color: #2563eb;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between select-none">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-red-600 to-blue-600 flex items-center justify-center text-white font-black text-lg sm:text-xl shadow-md">
+                    印
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold leading-tight text-slate-900">전자 도장 & 서명 생성기</h1>
+                    <p class="text-[11px] sm:text-xs text-slate-500">도장 만들기 + 직접 손서명/사인 지원 (투명 PNG)</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-1 text-[11px] sm:text-xs bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full font-semibold border border-emerald-200">
+                <i class="fa-solid fa-check-circle"></i>
+                <span>무료 상업용</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Area -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
+
+        <!-- Preview Window Section -->
+        <section class="lg:col-span-5 lg:order-2 flex flex-col space-y-3">
+            <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-between lg:sticky lg:top-20">
+                
+                <div class="w-full text-center">
+                    <div class="flex items-center justify-between mb-2 sm:mb-3">
+                        <span class="text-xs sm:text-sm font-bold text-slate-800 flex items-center">
+                            <i class="fa-solid fa-stamp text-red-600 mr-1.5" id="previewModeIcon"></i>
+                            <span id="previewTitle">실시간 미리보기</span>
+                        </span>
+                        <span class="text-[10px] sm:text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">
+                            투명 PNG
+                        </span>
+                    </div>
+
+                    <!-- Interactive Canvas Area -->
+                    <div class="checkerboard-bg p-3 sm:p-4 rounded-2xl border border-slate-200 flex items-center justify-center relative overflow-hidden shadow-inner my-1 sm:my-2">
+                        <canvas id="sealCanvas" width="360" height="360" class="w-56 h-56 sm:w-64 sm:h-64 drop-shadow-sm touch-none cursor-crosshair"></canvas>
+                    </div>
+
+                    <!-- Mode-Specific Quick Hint -->
+                    <p id="signatureHint" class="hidden text-[11px] text-blue-600 font-semibold mt-1">
+                        <i class="fa-solid fa-hand-pointer mr-1"></i>캔버스 위에서 손가락이나 마우스로 그려주세요.
+                    </p>
+                    <p class="text-[11px] sm:text-xs text-slate-400 mt-1">
+                        <i class="fa-solid fa-mobile-screen-button mr-1"></i>스마트폰 저장 후 모바일 HWP / PDF 즉시 활용
+                    </p>
+                </div>
+
+                <!-- Touch Friendly Action Buttons -->
+                <div class="w-full space-y-2 mt-4">
+                    <button type="button" onclick="downloadPNG()" class="w-full py-3 sm:py-3.5 px-4 bg-slate-900 hover:bg-slate-800 active:scale-[0.98] text-white font-bold rounded-xl shadow-md flex items-center justify-center transition text-sm sm:text-base">
+                        <i class="fa-solid fa-file-arrow-down mr-2 text-base sm:text-lg text-emerald-400"></i>
+                        투명 PNG 저장하기
+                    </button>
+                    
+                    <button type="button" onclick="copyToClipboard()" class="w-full py-2.5 sm:py-3 px-4 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] text-slate-700 font-bold rounded-xl border border-slate-200 flex items-center justify-center transition text-xs sm:text-sm">
+                        <i class="fa-regular fa-copy mr-2"></i>
+                        클립보드 복사 (붙여넣기)
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Main Controls Panel -->
+        <section class="lg:col-span-7 lg:order-1 space-y-4">
+            
+            <!-- Main Mode Switcher Tabs -->
+            <div class="bg-slate-200/80 p-1.5 rounded-2xl flex text-xs sm:text-sm font-bold text-slate-600">
+                <button type="button" onclick="switchMode('stamp')" id="tab-stamp" class="tab-btn active flex-1 py-2.5 sm:py-3 rounded-xl flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-stamp text-red-600"></i>
+                    <span>인장 / 도장 만들기</span>
+                </button>
+                <button type="button" onclick="switchMode('drawSignature')" id="tab-drawSignature" class="tab-btn flex-1 py-2.5 sm:py-3 rounded-xl flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-signature text-blue-600"></i>
+                    <span>직접 손서명 (사인)</span>
+                </button>
+                <button type="button" onclick="switchMode('fontSignature')" id="tab-fontSignature" class="tab-btn flex-1 py-2.5 sm:py-3 rounded-xl flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-pen-nib text-indigo-600"></i>
+                    <span>캘리 서명 생성</span>
+                </button>
+            </div>
+
+            <!-- ================= MODE 1: STAMP CONTROLS ================= -->
+            <div id="mode-stamp" class="space-y-4">
+                
+                <!-- Quick Preset Selector -->
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xs sm:text-sm font-bold text-slate-700 mb-2.5 flex items-center">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-500 mr-1.5"></i>도장 추천 템플릿
+                    </h2>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <button type="button" onclick="applyPreset('personal_round')" class="p-2.5 rounded-xl border border-slate-200 hover:border-red-400 active:bg-red-50 text-left transition text-xs flex flex-col justify-between h-14 bg-slate-50/50">
+                            <span class="text-slate-900 font-bold">기본 개인 인장</span>
+                            <span class="text-[10px] text-slate-400">원형 + 나눔명조</span>
+                        </button>
+                        <button type="button" onclick="applyPreset('approval_square')" class="p-2.5 rounded-xl border border-slate-200 hover:border-red-400 active:bg-red-50 text-left transition text-xs flex flex-col justify-between h-14 bg-slate-50/50">
+                            <span class="text-slate-900 font-bold">공식 사각 직인</span>
+                            <span class="text-[10px] text-slate-400">사각 + 송명체</span>
+                        </button>
+                        <button type="button" onclick="applyPreset('oval_signature')" class="p-2.5 rounded-xl border border-slate-200 hover:border-red-400 active:bg-red-50 text-left transition text-xs flex flex-col justify-between h-14 bg-slate-50/50">
+                            <span class="text-slate-900 font-bold">타원 서명인</span>
+                            <span class="text-[10px] text-slate-400">타원 + 고운바탕</span>
+                        </button>
+                        <button type="button" onclick="applyPreset('calli_stamp')" class="p-2.5 rounded-xl border border-slate-200 hover:border-red-400 active:bg-red-50 text-left transition text-xs flex flex-col justify-between h-14 bg-slate-50/50">
+                            <span class="text-slate-900 font-bold">캘리 손글씨인</span>
+                            <span class="text-[10px] text-slate-400">원형 + 손글씨</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Custom Options Form -->
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 sm:space-y-5">
+                    
+                    <!-- Section 1: Text Input & Suffix Options -->
+                    <div>
+                        <label class="block text-xs sm:text-sm font-bold text-slate-800 mb-1.5">1. 이름 및 접미사 입력</label>
+                        <div class="grid grid-cols-12 gap-2">
+                            <div class="col-span-7 sm:col-span-8">
+                                <input type="text" id="nameInput" value="홍길동" maxlength="6" 
+                                       class="w-full px-3 py-2.5 sm:py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 font-bold text-slate-900 text-sm sm:text-base"
+                                       placeholder="이름 입력" oninput="updateCanvas()">
+                            </div>
+                            <div class="col-span-5 sm:col-span-4">
+                                <select id="suffixOption" onchange="updateCanvas()" class="w-full px-2.5 py-2.5 sm:py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 font-medium text-slate-700 text-xs sm:text-sm bg-white">
+                                    <option value="인">인 (印)</option>
+                                    <option value="印">한자 印</option>
+                                    <option value="지인">지인 (之印)</option>
+                                    <option value="none">없음 (이름만)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="border-slate-100">
+
+                    <!-- Section 2: Layout Options -->
+                    <div>
+                        <label class="block text-xs sm:text-sm font-bold text-slate-800 mb-1.5">2. 글자 배열 방식</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button type="button" onclick="setLayout('vertical')" id="layout-vertical" class="layout-btn p-2.5 rounded-xl border border-red-500 bg-red-50 text-red-600 font-bold text-xs flex flex-col items-center justify-center gap-1 h-12">
+                                <i class="fa-solid fa-arrows-up-down text-sm"></i>
+                                세로 쓰기 (전통)
+                            </button>
+                            <button type="button" onclick="setLayout('grid2x2')" id="layout-grid2x2" class="layout-btn p-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium text-xs flex flex-col items-center justify-center gap-1 h-12">
+                                <i class="fa-solid fa-border-all text-sm"></i>
+                                2x2 격자 배치
+                            </button>
+                            <button type="button" onclick="setLayout('horizontal')" id="layout-horizontal" class="layout-btn p-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium text-xs flex flex-col items-center justify-center gap-1 h-12">
+                                <i class="fa-solid fa-arrows-left-right text-sm"></i>
+                                가로 쓰기 (현대)
+                            </button>
+                        </div>
+                    </div>
+
+                    <hr class="border-slate-100">
+
+                    <!-- Section 3: Font Selection -->
+                    <div>
+                        <label class="block text-xs sm:text-sm font-bold text-slate-800 mb-1.5">3. 한글 서체 선택 (저작권 무료)</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="fontRadioGroup">
+                            <label class="font-option p-2.5 rounded-xl border border-red-500 bg-red-50/50 cursor-pointer flex items-center justify-between transition">
+                                <input type="radio" name="fontFamily" value="'Nanum Myeongjo', serif" checked onchange="updateCanvas()" class="hidden">
+                                <span class="font-myeongjo text-sm font-bold">나눔명조</span>
+                                <i class="fa-solid fa-check text-red-600 check-icon text-xs"></i>
+                            </label>
+
+                            <label class="font-option p-2.5 rounded-xl border border-slate-200 cursor-pointer flex items-center justify-between transition">
+                                <input type="radio" name="fontFamily" value="'Song Myung', serif" onchange="updateCanvas()" class="hidden">
+                                <span class="font-song text-sm font-bold">송명체</span>
+                                <i class="fa-solid fa-check text-red-600 opacity-0 check-icon text-xs"></i>
+                            </label>
+
+                            <label class="font-option p-2.5 rounded-xl border border-slate-200 cursor-pointer flex items-center justify-between transition">
+                                <input type="radio" name="fontFamily" value="'Gowun Batang', serif" onchange="updateCanvas()" class="hidden">
+                                <span class="font-batang text-sm font-bold">고운바탕체</span>
+                                <i class="fa-solid fa-check text-red-600 opacity-0 check-icon text-xs"></i>
+                            </label>
+
+                            <label class="font-option p-2.5 rounded-xl border border-slate-200 cursor-pointer flex items-center justify-between transition">
+                                <input type="radio" name="fontFamily" value="'East Sea Dokdo', cursive" onchange="updateCanvas()" class="hidden">
+                                <span class="font-dokdo text-lg">독도체</span>
+                                <i class="fa-solid fa-check text-red-600 opacity-0 check-icon text-xs"></i>
+                            </label>
+
+                            <label class="font-option p-2.5 rounded-xl border border-slate-200 cursor-pointer flex items-center justify-between transition">
+                                <input type="radio" name="fontFamily" value="'Nanum Pen Script', cursive" onchange="updateCanvas()" class="hidden">
+                                <span class="font-pen text-base font-bold">나눔손글씨</span>
+                                <i class="fa-solid fa-check text-red-600 opacity-0 check-icon text-xs"></i>
+                            </label>
+
+                            <label class="font-option p-2.5 rounded-xl border border-slate-200 cursor-pointer flex items-center justify-between transition">
+                                <input type="radio" name="fontFamily" value="'Do Hyeon', sans-serif" onchange="updateCanvas()" class="hidden">
+                                <span class="font-dohyeon text-xs">도현체</span>
+                                <i class="fa-solid fa-check text-red-600 opacity-0 check-icon text-xs"></i>
+                            </label>
+                        </div>
+                    </div>
+
+                    <hr class="border-slate-100">
+
+                    <!-- Section 4: Shape & Frame -->
+                    <div>
+                        <label class="block text-xs sm:text-sm font-bold text-slate-800 mb-1.5">4. 도장 모양 및 테두리 설정</label>
+                        
+                        <div class="grid grid-cols-4 gap-1.5 sm:gap-2 mb-3">
+                            <button type="button" onclick="setShape('circle')" id="shape-circle" class="shape-btn active-shape p-2 rounded-xl border border-red-500 bg-red-50 text-red-600 text-xs font-semibold flex flex-col items-center justify-center gap-1 h-14">
+                                <div class="w-4 h-4 rounded-full border-2 border-red-600"></div>
+                                원형
+                            </button>
+                            <button type="button" onclick="setShape('square')" id="shape-square" class="shape-btn p-2 rounded-xl border border-slate-200 text-slate-700 text-xs font-semibold flex flex-col items-center justify-center gap-1 h-14">
+                                <div class="w-4 h-4 border-2 border-slate-600"></div>
+                                직사각형
+                            </button>
+                            <button type="button" onclick="setShape('oval')" id="shape-oval" class="shape-btn p-2 rounded-xl border border-slate-200 text-slate-700 text-xs font-semibold flex flex-col items-center justify-center gap-1 h-14">
+                                <div class="w-5 h-3 rounded-full border-2 border-slate-600"></div>
+                                타원형
+                            </button>
+                            <button type="button" onclick="setShape('rounded_square')" id="shape-rounded_square" class="shape-btn p-2 rounded-xl border border-slate-200 text-slate-700 text-xs font-semibold flex flex-col items-center justify-center gap-1 h-14">
+                                <div class="w-4 h-4 rounded-md border-2 border-slate-600"></div>
+                                둥근사각
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+                            <div>
+                                <span class="font-bold text-slate-700 block mb-1">테두리 종류</span>
+                                <select id="borderType" onchange="updateCanvas()" class="w-full p-2 rounded-lg border border-slate-300 font-medium bg-white">
+                                    <option value="single">단선 (기본)</option>
+                                    <option value="double">이중선 (공인 스타일)</option>
+                                    <option value="none">테두리 없음</option>
+                                </select>
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="font-bold text-slate-700">테두리 두께</span>
+                                    <span id="borderWidthVal" class="text-slate-500 font-semibold">8px</span>
+                                </div>
+                                <input type="range" id="borderWidth" min="2" max="18" value="8" oninput="updateCanvas()" class="w-full accent-red-600">
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="border-slate-100">
+
+                    <!-- Section 5: Color & Grunge Slider -->
+                    <div>
+                        <label class="block text-xs sm:text-sm font-bold text-slate-800 mb-1.5">5. 색상 및 인주 질감 효과</label>
+                        
+                        <div class="flex items-center justify-between mb-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                            <span class="text-xs font-bold text-slate-700">도장 색상:</span>
+                            <div class="flex space-x-2">
+                                <button type="button" onclick="setColor('#D32F2F')" class="color-btn w-7 h-7 rounded-full bg-[#D32F2F] ring-2 ring-offset-2 ring-red-600" title="전통 인주색"></button>
+                                <button type="button" onclick="setColor('#FF1744')" class="color-btn w-7 h-7 rounded-full bg-[#FF1744]" title="밝은 빨강"></button>
+                                <button type="button" onclick="setColor('#880E4F')" class="color-btn w-7 h-7 rounded-full bg-[#880E4F]" title="버건디"></button>
+                                <button type="button" onclick="setColor('#0F172A')" class="color-btn w-7 h-7 rounded-full bg-[#0F172A]" title="흑색 도장"></button>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-slate-700">인주 마모/빈티지 질감 효과</span>
+                                <span id="grungeVal" class="text-slate-500 font-semibold">은은함 (20%)</span>
+                            </div>
+                            <input type="range" id="grungeSlider" min="0" max="100" value="20" oninput="updateCanvas()" class="w-full accent-red-600">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ================= MODE 2: DRAW SIGNATURE CONTROLS ================= -->
+            <div id="mode-drawSignature" class="hidden space-y-4">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h3 class="text-xs sm:text-sm font-bold text-slate-800 flex items-center">
+                            <i class="fa-solid fa-signature text-blue-600 mr-2"></i>직접 그리는 터치/마우스 서명
+                        </h3>
+                        <div class="flex space-x-2">
+                            <button type="button" onclick="undoSignature()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center transition">
+                                <i class="fa-solid fa-rotate-left mr-1"></i>실행취소
+                            </button>
+                            <button type="button" onclick="clearSignatureCanvas()" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-semibold flex items-center transition">
+                                <i class="fa-solid fa-trash-can mr-1"></i>전체지우기
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pen Thickness & Color Controls -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <span class="text-xs font-bold text-slate-700">펜 두께</span>
+                                <span id="penWidthVal" class="text-xs text-slate-500 font-semibold">6px</span>
+                            </div>
+                            <input type="range" id="penWidth" min="2" max="24" value="6" oninput="updatePenSettings()" class="w-full accent-blue-600">
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-700 block mb-1.5">펜 색상</span>
+                            <div class="flex space-x-2">
+                                <button type="button" onclick="setPenColor('#000000')" class="sig-color-btn w-7 h-7 rounded-full bg-black ring-2 ring-offset-2 ring-blue-600"></button>
+                                <button type="button" onclick="setPenColor('#1d4ed8')" class="sig-color-btn w-7 h-7 rounded-full bg-blue-700"></button>
+                                <button type="button" onclick="setPenColor('#dc2626')" class="sig-color-btn w-7 h-7 rounded-full bg-red-600"></button>
+                                <button type="button" onclick="setPenColor('#047857')" class="sig-color-btn w-7 h-7 rounded-full bg-emerald-700"></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= MODE 3: FONT STYLIZED SIGNATURE CONTROLS ================= -->
+            <div id="mode-fontSignature" class="hidden space-y-4">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <div>
+                        <label class="block text-xs sm:text-sm font-bold text-slate-800 mb-1.5">서명 이름 입력</label>
+                        <input type="text" id="sigNameInput" value="홍길동" maxlength="10" 
+                               class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900 text-sm"
+                               placeholder="예: 홍길동 또는 GilDong" oninput="updateFontSignatureCanvas()">
+                    </div>
+
+                    <hr class="border-slate-100">
+
+                    <div>
+                        <label class="block text-xs sm:text-sm font-bold text-slate-800 mb-1.5">캘리그래피 서명 폰트 선택</label>
+                        <div class="grid grid-cols-2 gap-2" id="sigFontRadioGroup">
+                            <label class="sig-font-option p-2.5 rounded-xl border border-indigo-500 bg-indigo-50/50 cursor-pointer flex items-center justify-between">
+                                <input type="radio" name="sigFontFamily" value="'East Sea Dokdo', cursive" checked onchange="updateFontSignatureCanvas()" class="hidden">
+                                <span class="font-dokdo text-lg">독도체</span>
+                                <i class="fa-solid fa-check text-indigo-600 sig-check-icon text-xs"></i>
+                            </label>
+
+                            <label class="sig-font-option p-2.5 rounded-xl border border-slate-200 cursor-pointer flex items-center justify-between">
+                                <input type="radio" name="sigFontFamily" value="'Nanum Pen Script', cursive" onchange="updateFontSignatureCanvas()" class="hidden">
+                                <span class="font-pen text-base font-bold">나눔손글씨</span>
+                                <i class="fa-solid fa-check text-indigo-600 opacity-0 sig-check-icon text-xs"></i>
+                            </label>
+
+                            <label class="sig-font-option p-2.5 rounded-xl border border-slate-200 cursor-pointer flex items-center justify-between">
+                                <input type="radio" name="sigFontFamily" value="'Gamja Flower', cursive" onchange="updateFontSignatureCanvas()" class="hidden">
+                                <span class="font-gamja text-sm font-bold">감자꽃체</span>
+                                <i class="fa-solid fa-check text-indigo-600 opacity-0 sig-check-icon text-xs"></i>
+                            </label>
+
+                            <label class="sig-font-option p-2.5 rounded-xl border border-slate-200 cursor-pointer flex items-center justify-between">
+                                <input type="radio" name="sigFontFamily" value="'Hi Melody', cursive" onchange="updateFontSignatureCanvas()" class="hidden">
+                                <span class="font-himelody text-sm font-bold">하이멜로디</span>
+                                <i class="fa-solid fa-check text-indigo-600 opacity-0 sig-check-icon text-xs"></i>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                        <span class="text-xs font-bold text-slate-700">서명 색상:</span>
+                        <div class="flex space-x-2">
+                            <button type="button" onclick="setSigFontColor('#000000')" class="sigfont-color-btn w-7 h-7 rounded-full bg-black ring-2 ring-offset-2 ring-indigo-600"></button>
+                            <button type="button" onclick="setSigFontColor('#1d4ed8')" class="sigfont-color-btn w-7 h-7 rounded-full bg-blue-700"></button>
+                            <button type="button" onclick="setSigFontColor('#dc2626')" class="sigfont-color-btn w-7 h-7 rounded-full bg-red-600"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-3 text-center text-[11px] text-slate-400">
+        전자 도장 & 서명 생성기 &copy; 2026. 모든 폰트는 오픈 폰트 라이선스(OFL)를 따릅니다.
+    </footer>
+
+    <!-- Toast Popup -->
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-4 py-2.5 rounded-full shadow-xl flex items-center space-x-2 opacity-0 pointer-events-none transform translate-y-4 z-50 text-xs sm:text-sm font-medium w-auto max-w-[90%] text-center justify-center">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-green-400"></i>
+        <span id="toastMsg">메시지</span>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Global App States
+        let currentAppMode = 'stamp'; // 'stamp', 'drawSignature', 'fontSignature'
+        let currentShape = 'circle'; 
+        let currentLayout = 'vertical'; 
+        let currentColor = '#D32F2F';
+
+        // Signature Drawing State
+        let isDrawing = false;
+        let penColor = '#000000';
+        let penWidth = 6;
+        let strokeHistory = [];
+        let currentStroke = [];
+
+        // Font Signature State
+        let sigFontColor = '#000000';
+
+        const canvas = document.getElementById('sealCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Font Dynamic Ready Check
+        document.fonts.ready.then(() => {
+            renderCurrentMode();
+        });
+
+        // Mode Switching Logic
+        function switchMode(mode) {
+            currentAppMode = mode;
+
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${mode}`).classList.add('active');
+
+            document.getElementById('mode-stamp').classList.add('hidden');
+            document.getElementById('mode-drawSignature').classList.add('hidden');
+            document.getElementById('mode-fontSignature').classList.add('hidden');
+            document.getElementById(`mode-${mode}`).classList.remove('hidden');
+
+            const previewIcon = document.getElementById('previewModeIcon');
+            const previewTitle = document.getElementById('previewTitle');
+            const sigHint = document.getElementById('signatureHint');
+
+            if (mode === 'stamp') {
+                previewIcon.className = 'fa-solid fa-stamp text-red-600 mr-1.5';
+                previewTitle.innerText = '도장 실시간 미리보기';
+                sigHint.classList.add('hidden');
+            } else if (mode === 'drawSignature') {
+                previewIcon.className = 'fa-solid fa-signature text-blue-600 mr-1.5';
+                previewTitle.innerText = '손서명 캔버스';
+                sigHint.classList.remove('hidden');
+            } else if (mode === 'fontSignature') {
+                previewIcon.className = 'fa-solid fa-pen-nib text-indigo-600 mr-1.5';
+                previewTitle.innerText = '캘리 서명 미리보기';
+                sigHint.classList.add('hidden');
+            }
+
+            renderCurrentMode();
+        }
+
+        function renderCurrentMode() {
+            if (currentAppMode === 'stamp') {
+                updateCanvas();
+            } else if (currentAppMode === 'drawSignature') {
+                redrawSignatureCanvas();
+            } else if (currentAppMode === 'fontSignature') {
+                updateFontSignatureCanvas();
+            }
+        }
+
+        /* ==================== SIGNATURE DRAWING ENGINE ==================== */
+        function getCanvasPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function startDrawing(e) {
+            if (currentAppMode !== 'drawSignature') return;
+            isDrawing = true;
+            const pos = getCanvasPos(e);
+            currentStroke = [{ x: pos.x, y: pos.y }];
+            e.preventDefault();
+        }
+
+        function draw(e) {
+            if (!isDrawing || currentAppMode !== 'drawSignature') return;
+            const pos = getCanvasPos(e);
+            currentStroke.push({ x: pos.x, y: pos.y });
+
+            ctx.lineWidth = penWidth;
+            ctx.strokeStyle = penColor;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            const len = currentStroke.length;
+            if (len >= 2) {
+                const p1 = currentStroke[len - 2];
+                const p2 = currentStroke[len - 1];
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+            }
+            e.preventDefault();
+        }
+
+        function stopDrawing(e) {
+            if (!isDrawing || currentAppMode !== 'drawSignature') return;
+            isDrawing = false;
+            if (currentStroke.length > 0) {
+                strokeHistory.push({
+                    color: penColor,
+                    width: penWidth,
+                    points: [...currentStroke]
+                });
+                currentStroke = [];
+            }
+            if (e) e.preventDefault();
+        }
+
+        function redrawSignatureCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            strokeHistory.forEach(stroke => {
+                if (stroke.points.length < 2) return;
+                ctx.lineWidth = stroke.width;
+                ctx.strokeStyle = stroke.color;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                ctx.beginPath();
+                ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+                for (let i = 1; i < stroke.points.length; i++) {
+                    ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+                }
+                ctx.stroke();
+            });
+        }
+
+        function undoSignature() {
+            if (strokeHistory.length > 0) {
+                strokeHistory.pop();
+                redrawSignatureCanvas();
+            }
+        }
+
+        function clearSignatureCanvas() {
+            strokeHistory = [];
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function updatePenSettings() {
+            penWidth = parseInt(document.getElementById('penWidth').value, 10);
+            document.getElementById('penWidthVal').innerText = penWidth + 'px';
+        }
+
+        function setPenColor(color) {
+            penColor = color;
+            document.querySelectorAll('.sig-color-btn').forEach(btn => btn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-600'));
+            event.currentTarget.classList.add('ring-2', 'ring-offset-2', 'ring-blue-600');
+        }
+
+        // Attach Canvas Events for Mobile Touch & Mouse
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseleave', stopDrawing);
+
+        canvas.addEventListener('touchstart', startDrawing, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        canvas.addEventListener('touchend', stopDrawing);
+
+        /* ==================== STYLIZED FONT SIGNATURE ENGINE ==================== */
+        function updateFontSignatureCanvas() {
+            if (currentAppMode !== 'fontSignature') return;
+            const width = canvas.width;
+            const height = canvas.height;
+            const name = document.getElementById('sigNameInput').value.trim() || '홍길동';
+            const font = document.querySelector('input[name="sigFontFamily"]:checked').value;
+
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = sigFontColor;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            let fontSize = 90;
+            if (name.length >= 5) fontSize = 60;
+            if (name.length >= 8) fontSize = 45;
+
+            ctx.font = `bold ${fontSize}px ${font}`;
+            ctx.fillText(name, width / 2, height / 2);
+        }
+
+        function setSigFontColor(color) {
+            sigFontColor = color;
+            document.querySelectorAll('.sigfont-color-btn').forEach(btn => btn.classList.remove('ring-2', 'ring-offset-2', 'ring-indigo-600'));
+            event.currentTarget.classList.add('ring-2', 'ring-offset-2', 'ring-indigo-600');
+            updateFontSignatureCanvas();
+        }
+
+        // Font Radio Change Listener for Stylized Signature
+        document.querySelectorAll('input[name="sigFontFamily"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                document.querySelectorAll('.sig-font-option').forEach(opt => {
+                    opt.classList.remove('border-indigo-500', 'bg-indigo-50/50');
+                    opt.classList.add('border-slate-200');
+                    opt.querySelector('.sig-check-icon').classList.add('opacity-0');
+                });
+                const parent = e.target.closest('.sig-font-option');
+                parent.classList.remove('border-slate-200');
+                parent.classList.add('border-indigo-500', 'bg-indigo-50/50');
+                parent.querySelector('.sig-check-icon').classList.remove('opacity-0');
+            });
+        });
+
+        /* ==================== STAMP ENGINE ==================== */
+        document.querySelectorAll('input[name="fontFamily"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                document.querySelectorAll('.font-option').forEach(opt => {
+                    opt.classList.remove('border-red-500', 'bg-red-50/50');
+                    opt.classList.add('border-slate-200');
+                    opt.querySelector('.check-icon').classList.add('opacity-0');
+                });
+                const parent = e.target.closest('.font-option');
+                parent.classList.remove('border-slate-200');
+                parent.classList.add('border-red-500', 'bg-red-50/50');
+                parent.querySelector('.check-icon').classList.remove('opacity-0');
+            });
+        });
+
+        function setLayout(layout) {
+            currentLayout = layout;
+            document.querySelectorAll('.layout-btn').forEach(btn => {
+                btn.classList.remove('border-red-500', 'bg-red-50', 'text-red-600', 'font-bold');
+                btn.classList.add('border-slate-200', 'text-slate-600', 'font-medium');
+            });
+            const activeBtn = document.getElementById(`layout-${layout}`);
+            if(activeBtn) {
+                activeBtn.classList.remove('border-slate-200', 'text-slate-600', 'font-medium');
+                activeBtn.classList.add('border-red-500', 'bg-red-50', 'text-red-600', 'font-bold');
+            }
+            updateCanvas();
+        }
+
+        function setShape(shape) {
+            currentShape = shape;
+            document.querySelectorAll('.shape-btn').forEach(btn => {
+                btn.classList.remove('border-red-500', 'bg-red-50', 'text-red-600');
+                btn.classList.add('border-slate-200', 'text-slate-700');
+                const icon = btn.querySelector('div');
+                if (icon) {
+                    icon.classList.remove('border-red-600');
+                    icon.classList.add('border-slate-600');
+                }
+            });
+            const activeBtn = document.getElementById(`shape-${shape}`);
+            if(activeBtn) {
+                activeBtn.classList.remove('border-slate-200', 'text-slate-700');
+                activeBtn.classList.add('border-red-500', 'bg-red-50', 'text-red-600');
+                const icon = activeBtn.querySelector('div');
+                if (icon) {
+                    icon.classList.remove('border-slate-600');
+                    icon.classList.add('border-red-600');
+                }
+            }
+            updateCanvas();
+        }
+
+        function setColor(hex) {
+            currentColor = hex;
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-offset-2', 'ring-red-600');
+            });
+            event.currentTarget.classList.add('ring-2', 'ring-offset-2', 'ring-red-600');
+            updateCanvas();
+        }
+
+        function applyPreset(preset) {
+            const suffixOption = document.getElementById('suffixOption');
+            const borderWidth = document.getElementById('borderWidth');
+            const borderType = document.getElementById('borderType');
+            const grungeSlider = document.getElementById('grungeSlider');
+
+            if(preset === 'personal_round') {
+                setShape('circle');
+                setLayout('vertical');
+                setFont("'Nanum Myeongjo', serif");
+                borderType.value = 'single';
+                borderWidth.value = 8;
+                suffixOption.value = '인';
+                grungeSlider.value = 15;
+            } else if(preset === 'approval_square') {
+                setShape('square');
+                setLayout('grid2x2');
+                setFont("'Song Myung', serif");
+                borderType.value = 'double';
+                borderWidth.value = 10;
+                suffixOption.value = '印';
+                grungeSlider.value = 10;
+            } else if(preset === 'oval_signature') {
+                setShape('oval');
+                setLayout('vertical');
+                setFont("'Gowun Batang', serif");
+                borderType.value = 'single';
+                borderWidth.value = 6;
+                suffixOption.value = '인';
+                grungeSlider.value = 20;
+            } else if(preset === 'calli_stamp') {
+                setShape('circle');
+                setLayout('horizontal');
+                setFont("'Nanum Pen Script', cursive");
+                borderType.value = 'single';
+                borderWidth.value = 7;
+                suffixOption.value = 'none';
+                grungeSlider.value = 35;
+            }
+            updateCanvas();
+        }
+
+        function setFont(fontFamilyStr) {
+            const radio = document.querySelector(`input[name="fontFamily"][value="${fontFamilyStr}"]`);
+            if(radio) {
+                radio.checked = true;
+                radio.dispatchEvent(new Event('change'));
+            }
+        }
+
+        function updateCanvas() {
+            if (currentAppMode !== 'stamp') return;
+
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerX = width / 2;
+            const centerY = height / 2;
+
+            let rawName = document.getElementById('nameInput').value.trim() || '홍길동';
+            const suffix = document.getElementById('suffixOption').value;
+            const selectedFont = document.querySelector('input[name="fontFamily"]:checked').value;
+            const borderStyle = document.getElementById('borderType').value;
+            const bWidth = parseInt(document.getElementById('borderWidth').value, 10);
+            const grungeLevel = parseInt(document.getElementById('grungeSlider').value, 10);
+
+            document.getElementById('borderWidthVal').innerText = bWidth + 'px';
+            document.getElementById('grungeVal').innerText = grungeLevel === 0 ? '없음' : (grungeLevel < 30 ? '은은함' : (grungeLevel < 70 ? '보통' : '진함'));
+
+            let fullText = rawName;
+            if (suffix !== 'none') {
+                fullText += suffix;
+            }
+
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.fillStyle = currentColor;
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = bWidth;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            const margin = 20;
+            const size = width - (margin * 2);
+
+            // Outer Frame
+            if (borderStyle !== 'none') {
+                ctx.beginPath();
+                if (currentShape === 'circle') {
+                    ctx.arc(centerX, centerY, size / 2, 0, Math.PI * 2);
+                } else if (currentShape === 'oval') {
+                    ctx.ellipse(centerX, centerY, size / 2.6, size / 1.7, 0, 0, Math.PI * 2);
+                } else if (currentShape === 'square') {
+                    ctx.rect(margin, margin, size, size);
+                } else if (currentShape === 'rounded_square') {
+                    ctx.roundRect(margin, margin, size, size, 30);
+                }
+                ctx.stroke();
+
+                if (borderStyle === 'double') {
+                    ctx.save();
+                    ctx.lineWidth = Math.max(2, bWidth / 3);
+                    const gap = bWidth + 4;
+                    ctx.beginPath();
+                    if (currentShape === 'circle') {
+                        ctx.arc(centerX, centerY, (size / 2) - gap, 0, Math.PI * 2);
+                    } else if (currentShape === 'oval') {
+                        ctx.ellipse(centerX, centerY, (size / 2.6) - gap, (size / 1.7) - gap, 0, 0, Math.PI * 2);
+                    } else if (currentShape === 'square') {
+                        ctx.rect(margin + gap, margin + gap, size - (gap * 2), size - (gap * 2));
+                    } else if (currentShape === 'rounded_square') {
+                        ctx.roundRect(margin + gap, margin + gap, size - (gap * 2), size - (gap * 2), 20);
+                    }
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+
+            // Text Positioning
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            const chars = fullText.split('');
+            const len = chars.length;
+
+            let baseFontSize = 95;
+            if (currentShape === 'oval') baseFontSize = 80;
+            if (len === 1) baseFontSize = 130;
+            if (len === 2) baseFontSize = 110;
+            if (len === 3) baseFontSize = 90;
+            if (len >= 4) baseFontSize = 75;
+
+            ctx.font = `bold ${baseFontSize}px ${selectedFont}`;
+
+            if (currentLayout === 'vertical') {
+                if (len === 1) {
+                    ctx.fillText(chars[0], centerX, centerY);
+                } else if (len === 2) {
+                    ctx.fillText(chars[0], centerX, centerY - baseFontSize * 0.5);
+                    ctx.fillText(chars[1], centerX, centerY + baseFontSize * 0.5);
+                } else if (len === 3) {
+                    const offsetX = size * 0.18;
+                    ctx.fillText(chars[0], centerX + offsetX, centerY - baseFontSize * 0.45);
+                    ctx.fillText(chars[1], centerX - offsetX, centerY - baseFontSize * 0.45);
+                    ctx.fillText(chars[2], centerX - offsetX, centerY + baseFontSize * 0.45);
+                } else {
+                    const stepY = (size * 0.65) / len;
+                    const startY = centerY - ((len - 1) * stepY) / 2;
+                    chars.forEach((c, idx) => {
+                        ctx.fillText(c, centerX, startY + (idx * stepY));
+                    });
+                }
+            } else if (currentLayout === 'grid2x2') {
+                const offX = size * 0.20;
+                const offY = size * 0.22;
+                if (len >= 4) {
+                    ctx.fillText(chars[0], centerX + offX, centerY - offY);
+                    ctx.fillText(chars[1], centerX + offX, centerY + offY);
+                    ctx.fillText(chars[2], centerX - offX, centerY - offY);
+                    ctx.fillText(chars[3], centerX - offX, centerY + offY);
+                } else if (len === 3) {
+                    ctx.fillText(chars[0], centerX + offX, centerY - offY);
+                    ctx.fillText(chars[1], centerX + offX, centerY + offY);
+                    ctx.fillText(chars[2], centerX - offX, centerY);
+                } else {
+                    ctx.fillText(chars[0], centerX, centerY);
+                }
+            } else if (currentLayout === 'horizontal') {
+                ctx.fillText(fullText, centerX, centerY);
+            }
+
+            // Vintage Texture
+            if (grungeLevel > 0) {
+                ctx.save();
+                ctx.globalCompositeOperation = 'destination-out';
+                let seed = 98765;
+                const pseudoRandom = () => {
+                    const x = Math.sin(seed++) * 10000;
+                    return x - Math.floor(x);
+                };
+                const dotCount = Math.floor((width * height) * (grungeLevel / 30000));
+                for (let i = 0; i < dotCount; i++) {
+                    const rx = pseudoRandom() * width;
+                    const ry = pseudoRandom() * height;
+                    const rRadius = pseudoRandom() * 2 + 0.5;
+                    ctx.beginPath();
+                    ctx.arc(rx, ry, rRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+
+        /* ==================== EXPORT & TOAST UTILS ==================== */
+        function downloadPNG() {
+            let filename = '도장';
+            if (currentAppMode === 'stamp') {
+                const name = document.getElementById('nameInput').value.trim() || '도장';
+                filename = `${name}_전자도장.png`;
+            } else if (currentAppMode === 'drawSignature') {
+                filename = `전자서명.png`;
+            } else {
+                const name = document.getElementById('sigNameInput').value.trim() || '서명';
+                filename = `${name}_전자서명.png`;
+            }
+
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast('투명 PNG 이미지가 저장되었습니다!');
+        }
+
+        function copyToClipboard() {
+            canvas.toBlob((blob) => {
+                if (!blob) {
+                    showToast('이미지 생성에 실패했습니다.', true);
+                    return;
+                }
+                try {
+                    const item = new ClipboardItem({ 'image/png': blob });
+                    navigator.clipboard.write([item]).then(() => {
+                        showToast('클립보드에 이미지가 복사되었습니다!');
+                    }).catch(() => {
+                        showToast('모바일 브라우저는 복사를 지원하지 않을 수 있습니다. 저장하기를 이용하세요.', true);
+                    });
+                } catch (e) {
+                    showToast('저장하기 버튼을 이용해 주세요.', true);
+                }
+            });
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.innerText = message;
+            toastIcon.className = isError 
+                ? 'fa-solid fa-circle-exclamation text-amber-400' 
+                : 'fa-solid fa-circle-check text-green-400';
+
+            toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+            }, 3000);
+        }
+
+        window.onload = () => {
+            updateCanvas();
+        };
+    </script>
+</body>
+</html>
