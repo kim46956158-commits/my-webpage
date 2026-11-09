@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>시계 읽기 연습</title>
+<style>
+:root{--bg:#fff8e7;--card:#fff;--ink:#2b2a33;--sub:#6b6878;--accent:#ff7a3d;--ok:#1f9d55;--bad:#d64545;--line:#e6dfcf;--face:#fffdf6;--hour:#2b2a33;--min:#3b82f6;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1b22;--card:#2a2933;--ink:#f3f1ea;--sub:#aaa7b8;--accent:#ff9461;--ok:#4cc380;--bad:#ff7a7a;--line:#3d3b49;--face:#24232c;--hour:#f3f1ea;--min:#6ea8ff}}
+:root[data-theme="dark"]{--bg:#1c1b22;--card:#2a2933;--ink:#f3f1ea;--sub:#aaa7b8;--accent:#ff9461;--ok:#4cc380;--bad:#ff7a7a;--line:#3d3b49;--face:#24232c;--hour:#f3f1ea;--min:#6ea8ff}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Jua","Noto Sans KR","Apple SD Gothic Neo",system-ui,sans-serif;display:flex;justify-content:center;padding:16px}
+main{width:100%;max-width:520px;display:flex;flex-direction:column;gap:12px}
+h1{margin:0;font-size:1.5rem;text-align:center}
+.card{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:14px}
+.levels{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+button{font:inherit;cursor:pointer;border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;padding:10px 6px;font-size:1rem}
+button.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+button.main{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:700;font-size:1.15rem;padding:12px 22px}
+.lv small{display:block;font-size:.75rem;opacity:.85}
+svg{width:100%;max-width:340px;margin:0 auto;display:block;touch-action:none}
+.row{display:flex;align-items:center;justify-content:center;gap:8px;font-size:1.4rem;flex-wrap:wrap}
+input{width:78px;font:inherit;font-size:1.6rem;text-align:center;padding:8px;border-radius:12px;border:2px solid var(--line);background:var(--face);color:var(--ink)}
+input:focus{outline:3px solid var(--accent)}
+.st{display:flex;align-items:center;gap:6px}
+.st .sb{width:54px;height:54px;padding:0;font-size:1.3rem;font-weight:700;border-radius:50%;background:var(--face);line-height:1}
+.st .sb:active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.st input{width:72px}
+#msg{min-height:3.2em;text-align:center;font-size:1.05rem;line-height:1.5}
+.good{color:var(--ok);font-weight:700;font-size:1.3rem}.bad{color:var(--bad);font-weight:700}
+.hint{color:var(--sub);font-size:.95rem}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);text-align:center;gap:8px}
+.stats b{display:block;font-size:1.6rem}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.top button{padding:6px 12px;font-size:.9rem}
+#fx{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:20}
+.p{position:absolute;top:-30px;animation:fall linear forwards}
+.b{position:absolute;bottom:-60px;font-size:44px;animation:rise ease-in forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+@keyframes rise{to{transform:translateY(-115vh)}}
+.digital{text-align:center;font-size:2rem;font-weight:700}
+</style>
+</head>
+<body>
+<main>
+<h1>🕒 시계 읽기 연습</h1>
+<div class="top">
+  <div class="levels" style="flex:1" id="levels"></div>
+</div>
+<div class="top">
+  <button id="modeQ" class="on">문제 풀기</button>
+  <button id="modeE">분침 돌려보기</button>
+</div>
+
+<div class="card">
+<svg id="clock" viewBox="-110 -110 220 220" aria-label="아날로그 시계">
+  <circle r="106" fill="var(--face)" stroke="var(--ink)" stroke-width="4"/>
+  <g id="ticks"></g><g id="nums"></g>
+  <line id="hh" x1="0" y1="8" x2="0" y2="-50" stroke="var(--hour)" stroke-width="7" stroke-linecap="round"/>
+  <line id="mh" x1="0" y1="12" x2="0" y2="-80" stroke="var(--min)" stroke-width="4" stroke-linecap="round"/>
+  <circle r="5" fill="var(--accent)"/>
+</svg>
+</div>
+
+<div class="card" id="qbox">
+  <div class="row">
+    <div class="st">
+      <button type="button" class="sb" id="hm" aria-label="시 줄이기">−1</button>
+      <input id="hin" type="number" inputmode="numeric" min="1" max="12" placeholder="시" aria-label="시">
+      <button type="button" class="sb" id="hp" aria-label="시 늘리기">+1</button> 시
+    </div>
+    <div class="st">
+      <button type="button" class="sb" id="mm" aria-label="분 줄이기">−15</button>
+      <input id="min" type="number" inputmode="numeric" min="0" max="59" placeholder="분" aria-label="분">
+      <button type="button" class="sb" id="mp" aria-label="분 늘리기">+15</button> 분
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:10px"><button class="main" id="check">정답 확인</button></div>
+  <div id="msg"></div>
+</div>
+
+<div class="card digital" id="ebox" hidden><span id="dig"></span><div class="hint" style="font-size:.9rem;font-weight:400">긴바늘(파란색)을 잡고 돌려 보세요. 짧은바늘이 함께 움직여요!</div></div>
+
+<div class="card stats">
+  <div>총 문제<b id="sT">0</b></div>
+  <div style="color:var(--ok)">정답<b id="sC">0</b></div>
+  <div style="color:var(--bad)">오답<b id="sW">0</b></div>
+</div>
+<div style="text-align:center"><button id="reset" style="font-size:.85rem">기록 초기화</button></div>
+</main>
+<div id="fx"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const NS="http://www.w3.org/2000/svg";
+const LV=[["1단계","정시"],["2단계","30분 단위"],["3단계","5분 단위"],["4단계","1분 단위"]];
+let level=0,cur=null,locked=false,stats={t:0,c:0,w:0},mode="q",total=0,timer=null;
+
+// 눈금과 숫자
+for(let i=0;i<60;i++){
+  const big=i%5===0,l=document.createElementNS(NS,"line");
+  const a=i*6*Math.PI/180,r1=big?88:94,r2=100;
+  l.setAttribute("x1",Math.sin(a)*r1);l.setAttribute("y1",-Math.cos(a)*r1);
+  l.setAttribute("x2",Math.sin(a)*r2);l.setAttribute("y2",-Math.cos(a)*r2);
+  l.setAttribute("stroke","var(--ink)");l.setAttribute("stroke-width",big?3:1.2);
+  $("ticks").appendChild(l);
+}
+for(let n=1;n<=12;n++){
+  const a=n*30*Math.PI/180,t=document.createElementNS(NS,"text");
+  t.setAttribute("x",Math.sin(a)*74);t.setAttribute("y",-Math.cos(a)*74);
+  t.setAttribute("text-anchor","middle");t.setAttribute("dominant-baseline","central");
+  t.setAttribute("font-size","20");t.setAttribute("font-weight","700");t.setAttribute("fill","var(--ink)");
+  t.textContent=n;$("nums").appendChild(t);
+}
+// 시침은 분침에 비례: 시침각 = (h%12)*30 + m*0.5, 분침각 = m*6
+function draw(h,m){
+  $("mh").setAttribute("transform","rotate("+(m*6)+")");
+  $("hh").setAttribute("transform","rotate("+((h%12)*30+m*0.5)+")");
+}
+// 단계 버튼
+LV.forEach((l,i)=>{const b=document.createElement("button");b.className="lv"+(i===0?" on":"");
+  b.innerHTML=l[0]+"<small>"+l[1]+"</small>";b.onclick=()=>{level=i;[...$("levels").children].forEach((x,j)=>x.classList.toggle("on",j===i));newQ()};
+  $("levels").appendChild(b)});
+
+// +/- 버튼: 시는 1씩, 분은 단계별(1·2단계 15분, 3단계 5분, 4단계 1분)
+const STEP=()=>level<2?15:level===2?5:1;
+function updStep(){const s=STEP();$("mm").textContent="−"+s;$("mp").textContent="+"+s}
+function bumpH(d){if(locked)return;const el=$("hin");let v=parseInt(el.value);
+  if(isNaN(v))v=d>0?1:12;else{v+=d;if(v>12)v=1;if(v<1)v=12}el.value=v}
+function bumpM(d){if(locked)return;const el=$("min");let v=parseInt(el.value);if(isNaN(v))v=0;
+  el.value=((v+d*STEP())%60+60)%60}
+$("hm").onclick=()=>bumpH(-1);$("hp").onclick=()=>bumpH(1);
+$("mm").onclick=()=>bumpM(-1);$("mp").onclick=()=>bumpM(1);
+const pad=n=>String(n).padStart(2,"0");
+function randInt(a,b){return a+Math.floor(Math.random()*(b-a+1))}
+function newQ(){
+  clearTimeout(timer);locked=false;
+  const steps=[[0],[0,30],[0,5,10,15,20,25,30,35,40,45,50,55],null][level];
+  let h,m,tries=0;
+  do{h=randInt(1,12);m=steps?steps[randInt(0,steps.length-1)]:randInt(0,59);tries++}
+  while(cur&&cur.h===h&&cur.m===m&&tries<20);
+  cur={h,m};draw(h,m);
+  $("hin").value="";$("min").value="";$("msg").innerHTML="";
+  $("hin").focus({preventScroll:true});
+  $("check").textContent="정답 확인";updStep();
+}
+function hint(h,m){
+  const nx=h%12+1;
+  if(m===0)return "짧은바늘이 "+h+"를 가리키고, 긴바늘이 12를 가리켜요. 긴바늘이 12면 정각이에요.";
+  let s="짧은바늘은 "+h+"와 "+nx+" 사이에 있어요. 아직 "+nx+"에 닿지 않았으니 "+h+"시예요. ";
+  const k=Math.floor(m/5),r=m%5;
+  if(r===0)s+="긴바늘은 숫자 "+k+"을 가리켜요. "+k+" × 5 = "+m+"분이에요.";
+  else s+="긴바늘은 숫자 "+k+"을 지나 작은 눈금 "+r+"칸 더 갔어요. "+k+" × 5 = "+(k*5)+", 거기에 "+r+"을 더하면 "+m+"분이에요.";
+  return s;
+}
+function check(){
+  if(locked||mode!=="q")return;
+  const hv=$("hin").value,mv=$("min").value;
+  if(hv===""||mv===""){$("msg").innerHTML='<span class="hint">시와 분을 모두 입력해 주세요.</span>';return}
+  locked=true;stats.t++;
+  if(+hv===cur.h&&+mv===cur.m){
+    stats.c++;$("msg").innerHTML='<span class="good">🎉 정답이에요! '+cur.h+'시 '+(cur.m?cur.m+'분':'정각')+'</span>';
+    celebrate();timer=setTimeout(newQ,1800);
+  }else{
+    stats.w++;
+    $("msg").innerHTML='<span class="bad">앗, 아쉬워요! 정답은 '+cur.h+'시 '+cur.m+'분이에요.</span><div class="hint">💡 '+hint(cur.h,cur.m)+'</div>';
+    $("check").textContent="다음 문제 ▶";
+    wrong=true;
+  }
+  render();
+}
+let wrong=false;
+$("check").onclick=()=>{
+  if(wrong){wrong=false;newQ();return}
+  check();
+};
+document.addEventListener("keydown",e=>{if(e.key==="Enter")$("check").click()});
+function render(){$("sT").textContent=stats.t;$("sC").textContent=stats.c;$("sW").textContent=stats.w;}
+$("reset").onclick=()=>{stats={t:0,c:0,w:0};render();if(mode==="q"){wrong=false;newQ()}};
+
+// 축하 효과
+function celebrate(){
+  const fx=$("fx"),cols=["#ff5d5d","#ffb703","#3b82f6","#22c55e","#c084fc","#ff7ab6"];
+  for(let i=0;i<60;i++){const p=document.createElement("div");p.className="p";
+    p.style.left=Math.random()*100+"vw";p.style.width=p.style.height=(6+Math.random()*8)+"px";
+    p.style.background=cols[i%cols.length];p.style.animationDuration=(1.4+Math.random()*1.2)+"s";
+    p.style.animationDelay=Math.random()*.4+"s";fx.appendChild(p);setTimeout(()=>p.remove(),3200)}
+  for(let i=0;i<8;i++){const b=document.createElement("div");b.className="b";b.textContent=["🎈","🎉","🎊"][i%3];
+    b.style.left=(5+Math.random()*85)+"vw";b.style.animationDuration=(1.8+Math.random()*1)+"s";
+    b.style.animationDelay=Math.random()*.4+"s";fx.appendChild(b);setTimeout(()=>b.remove(),3300)}
+}
+
+// 탐험 모드: 분침을 돌리면 시침이 연동
+function showE(){const h=Math.floor(total/60)%12||12,m=total%60;draw(h,m);$("dig").textContent=h+"시 "+m+"분"}
+let drag=false;
+function ang(e){const s=$("clock").getBoundingClientRect(),x=e.clientX-(s.left+s.width/2),y=e.clientY-(s.top+s.height/2);
+  return (Math.atan2(x,-y)*180/Math.PI+360)%360}
+$("clock").addEventListener("pointerdown",e=>{if(mode==="e"){drag=true;$("clock").setPointerCapture(e.pointerId);mv(e)}});
+$("clock").addEventListener("pointermove",e=>{if(drag)mv(e)});
+$("clock").addEventListener("pointerup",()=>drag=false);
+function mv(e){
+  const nm=Math.round(ang(e)/6)%60,pm=total%60;let d=nm-pm;
+  if(d>30)d-=60;if(d<-30)d+=60;
+  total=(total+d+720)%720;showE();
+}
+function setMode(m){
+  mode=m;$("modeQ").classList.toggle("on",m==="q");$("modeE").classList.toggle("on",m==="e");
+  $("qbox").hidden=m!=="q";$("ebox").hidden=m!=="e";
+  clearTimeout(timer);
+  if(m==="q"){wrong=false;newQ()}else{total=3*60;showE()}
+}
+$("modeQ").onclick=()=>setMode("q");$("modeE").onclick=()=>setMode("e");
+newQ();render();
+</script>
+</body>
+</html>
